@@ -428,4 +428,4 @@ def delete_poster(poster_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all() # Automatska inicijalizacija baze na startu
-    app.run(debug=True)11111111
+    app.run(debug=True)
