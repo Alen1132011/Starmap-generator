@@ -29,7 +29,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     posters = db.relationship('Poster', backref='author', lazy=True, cascade="all, delete-orphan")
-
+  
 class Poster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -75,7 +75,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# --- MATEMATIKA, FIZIKA I PIL CRTANJE (Nepromijenjeno) ---
+# --- MATEMATIKA, FIZIKA I PIL CRTANJE ---
 
 VEZE_SAZVIJEZDA = [
     (53910, 58001), (58001, 59774), (59774, 62956), (62956, 65378), (65378, 67301), (67301, 65477), (65477, 62956),
@@ -208,14 +208,40 @@ def napravi_starmap_pro(podaci):
     t = ts.utc(y, m, d, h, mn)
     lst = (18.697374558 + 24.06570982441908 * (t.ut1 - 2451545.0) + lon / 15.0) % 24
 
+    # --- POBOLJŠANA I ISPRAVLJENA STEREOGRAFSKA REŠETKA (GRID) ---
     if podaci.get('grid') == 'on':
         grid_col = (*zvijezde_boja, 45)
-        for alt_deg in [30, 60]:
-            r_g = R * (1 - alt_deg/90)
-            draw_nebo.ellipse([cx-r_g, cy-r_g, cx+r_g, cy+r_g], outline=grid_col, width=3)
-        for az in range(0, 360, 30):
-            ang = math.radians(az)
-            draw_nebo.line([(cx, cy), (cx+R*math.sin(ang), cy-R*math.cos(ang))], fill=grid_col, width=2)
+        
+        # 1. Paralele (horizontalni lukovi) svako 15 stepeni
+        for lat_deg in range(-75, 76, 15):
+            tacke_linije = []
+            for lon_deg in range(-90, 91, 2):
+                lon_rad = math.radians(lon_deg)
+                lat_rad = math.radians(lat_deg)
+                
+                imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
+                if imenilac > 0:
+                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = cy - R * (math.sin(lat_rad)) / imenilac
+                    tacke_linije.append((x, y))
+            if len(tacke_linije) > 1:
+                draw_nebo.line(tacke_linije, fill=grid_col, width=3)
+                
+        # 2. Meridijani (vertikalni lukovi) svako 15 stepeni
+        for lon_deg in range(-75, 76, 15):
+            tacke_linije = []
+            for lat_deg in range(-90, 91, 2):
+                lon_rad = math.radians(lon_deg)
+                lat_rad = math.radians(lat_deg)
+                
+                imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
+                if imenilac > 0:
+                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = cy - R * (math.sin(lat_rad)) / imenilac
+                    tacke_linije.append((x, y))
+            if len(tacke_linije) > 1:
+                draw_nebo.line(tacke_linije, fill=grid_col, width=3)
+    # --- KRAJ REŠETKE ---
 
     pos_map = {}
     for hid, s in stars_df.iterrows():
@@ -302,7 +328,7 @@ def napravi_starmap_pro(podaci):
     return putanja
 
 
-# --- RUTE ZA AUTENTIFIKACIJU I ČUVANJE RADova ---
+# --- RUTE ZA AUTENTIFIKACIJU I ČUVANJE RADOVA ---
 
 @app.route('/')
 def index():
@@ -429,3 +455,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all() # Automatska inicijalizacija baze na startu
     app.run(debug=True)
+            
