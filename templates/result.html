@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vaš Poster je Spreman</title>
+    <style>
+        body { background: #05070f; color: white; text-align: center; font-family: sans-serif; padding: 40px; }
+        img { border: 8px solid white; border-radius: 10px; box-shadow: 0 0 50px rgba(255,255,255,0.1); margin-bottom: 30px; }
+        .btn-group { display: flex; justify-content: center; gap: 20px; }
+        .btn { padding: 15px 30px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        .download { background: #28a745; color: white; }
+        .back { background: #1e263d; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🌟 Vaš Poster je Spreman!</h1>
+    <img src="/{{ image_path }}?v={{ range(1, 999) | random }}" width="500">
+    <div class="btn-group">
+        <a href="/{{ image_path }}" download class="btn download">⬇️ DOWNLOAD (Full HD)</a>
+        <a href="/" class="btn back">🔙 NAZAD NA IZMJENE</a>
+    </div>
+</body>
+</html>    

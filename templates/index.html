@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en"> <head>
+  <meta charset="UTF-8">
+  <title>StarMap Designer Pro</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root{
+      --ink:#05070d;
+      --panel:#0b0f1c;
+      --plate:#101833;
+      --plate-2:#0d1424;
+      --line:#212c4a;
+      --brass:#c9a227;
+      --brass-dim:#7c672a;
+      --starlight:#f4ecd8;
+      --glow:#7fb0e8;
+      --muted:#5c6788;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; height:100vh; overflow:hidden;
+      background:var(--ink); color:var(--starlight);
+      font-family:'Space Mono', monospace;
+      display:flex;
+    }
+   
+    /* ---------- PREVIEW SIDE ---------- */
+    .preview-side{
+      flex:1; position:relative; background:#000;
+      display:flex; align-items:center; justify-content:center;
+      padding:30px; overflow:hidden;
+    }
+    .starfield{
+      position:absolute; inset:0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, #ffffff55 50%, transparent 50%),
+        radial-gradient(1px 1px at 25% 60%, #ffffff77 50%, transparent 50%),
+        radial-gradient(1.5px 1.5px at 40% 15%, #ffffff44 50%, transparent 50%),
+        radial-gradient(1px 1px at 55% 80%, #ffffff66 50%, transparent 50%),
+        radial-gradient(1px 1px at 70% 35%, #ffffff55 50%, transparent 50%),
+        radial-gradient(1.5px 1.5px at 85% 65%, #ffffff77 50%, transparent 50%),
+        radial-gradient(1px 1px at 92% 10%, #ffffff44 50%, transparent 50%),
+        radial-gradient(1px 1px at 15% 90%, #ffffff55 50%, transparent 50%);
+      background-repeat:repeat; background-size:400px 400px;
+      animation:twinkle 6s ease-in-out infinite; 
+      opacity:0.5;
+    }
+    @keyframes twinkle{ 0%,100%{opacity:.35;} 50%{opacity:.65;} }
+   
+    .frame-wrap{
+      position:relative; z-index:1;
+      cursor:zoom-in; transition:transform .35s ease;
+    }
+    .frame-wrap.zoomed{ cursor:zoom-out; transform:scale(1.35); }
+    .preview-side img{
+      max-height:88vh; display:block;
+      box-shadow:0 0 60px rgba(0,0,0,.9), 0 0 0 1px #000;
+      border:1px solid #2a2a2a;
+      transition:opacity .25s ease, filter .25s ease;
+    }
+    .preview-side img.loading{ opacity:.55; filter:blur(1px); }
+   
+    .status-pill{
+      position:absolute; top:22px; left:22px; z-index:2;
+      font-size:10px; letter-spacing:.14em; color:var(--muted);
+      display:flex; align-items:center; gap:8px;
+      padding:6px 12px; border:1px solid var(--line);
+      border-radius:20px; background:#000a; backdrop-filter:blur(4px);
+    }
+    .status-dot{
+      width:6px; height:6px; border-radius:50%; background:var(--brass);
+      box-shadow:0 0 6px var(--brass);
+    }
+    .status-pill.busy .status-dot{ animation:pulse 0.8s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+   
+    /* ---------- CONTROL SIDE ---------- */
+    .controls-side{
+      width:440px; background:var(--panel);
+      border-left:1px solid var(--line);
+      display:flex; flex-direction:column;
+      overflow:hidden;
+    }
+    .instrument-header{
+      padding:26px 26px 20px; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; gap:16px;
+      background:linear-gradient(180deg, var(--plate), var(--panel));
+      position: relative;
+    }
+    .astrolabe{ flex-shrink:0; animation:spin 90s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+   
+    .instrument-header h1{
+      font-family:'Cormorant Garamond', serif; font-weight:600;
+      font-style:italic; font-size:26px; margin:0; color:var(--starlight);
+      letter-spacing:.02em;
+    }
+    .instrument-header p{
+      margin:2px 0 0; font-size:10px; letter-spacing:.18em;
+      color:var(--brass); text-transform:uppercase;
+    }
+
+    .lang-switcher {
+      position: absolute; right: 26px; top: 26px;
+      display: flex; gap: 6px;
+    }
+    .lang-btn {
+      background: transparent; border: 1px solid var(--line);
+      color: var(--muted); padding: 3px 6px; border-radius: 3px;
+      font-size: 9px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .lang-btn.active {
+      border-color: var(--brass); color: var(--brass); background: #c9a22711;
+    }
+   
+    .form-scroll{ flex:1; overflow-y:auto; padding:20px 26px 10px; }
+    .form-scroll::-webkit-scrollbar{ width:6px; }
+    .form-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+   
+    .plate{
+      border:1px solid var(--line); border-radius:6px;
+      background:var(--plate-2); margin-bottom:16px; overflow:hidden;
+    }
+    .plate summary{
+      list-style:none; cursor:pointer; padding:12px 16px;
+      display:flex; align-items:center; gap:10px;
+      font-family:'Cormorant Garamond', serif; font-size:16px; font-style:italic;
+      color:var(--starlight); user-select:none;
+      border-bottom:1px solid transparent;
+    }
+    .plate[open] summary{ border-bottom-color:var(--line); }
+    .plate summary::-webkit-details-marker{ display:none; }
+    .numeral{
+      font-family:'Space Mono', monospace; font-size:10px; color:var(--brass);
+      border:1px solid var(--brass-dim); border-radius:3px;
+      padding:2px 6px; letter-spacing:.05em;
+    }
+    .plate summary::after{
+      content:'▾'; margin-left:auto; color:var(--muted);
+      transition:transform .2s ease; font-size:11px;
+    }
+    .plate[open] summary::after{ transform:rotate(180deg); }
+    .plate-body{ padding:14px 16px 18px; }
+   
+    label.field-label{
+      display:flex; justify-content:space-between; align-items:baseline;
+      font-size:10px; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.1em; margin-top:14px; margin-bottom:5px;
+    }
+    label.field-label:first-child{ margin-top:0; }
+    .field-label .val{ color:var(--brass); font-size:10px; }
+   
+    input[type=text], input[type=number], input[type=password], select{
+      width:100%; padding:9px 10px; background:#080b16;
+      border:1px solid var(--line); color:var(--starlight);
+      border-radius:4px; font-family:'Space Mono', monospace; font-size:12px;
+    }
+    input[type=text]:focus, input[type=number]:focus, input[type=password]:focus, select:focus{
+      outline:none; border-color:var(--brass); box-shadow:0 0 0 3px #c9a22722;
+    }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23c9a227'><polygon points='0,2 10,2 5,8'/></svg>");
+      background-repeat: no-repeat; background-position: right 12px center;
+      cursor: pointer;
+    }
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; }
+   
+    input[type=range]{
+      -webkit-appearance:none; width:100%; height:2px;
+      background:var(--line); border-radius:2px; margin:4px 0 2px;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:13px; height:13px; border-radius:50%;
+      background:var(--brass); border:2px solid var(--ink);
+      box-shadow:0 0 6px #c9a22788; cursor:pointer; margin-top:-6px;
+    }
+    input[type=range]::-moz-range-thumb{
+      width:13px; height:13px; border-radius:50%; background:var(--brass);
+      border:2px solid var(--ink); cursor:pointer;
+    }
+   
+    .palette-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:6px; }
+    .swatch{ position:relative; cursor:pointer; }
+    .swatch .disc{
+      width:100%; aspect-ratio:1; border-radius:50%;
+      border:2px solid var(--line); transition:border-color .15s ease, transform .15s ease;
+    }
+    .swatch:hover .disc{ border-color:var(--brass-dim); transform:scale(1.04); }
+    .swatch span.name{
+      display:block; text-align:center; font-size:8px; color:var(--muted);
+      margin-top:4px; letter-spacing:.02em;
+    }
+    .disc.midnight{ background:radial-gradient(circle at 35% 30%, #35468c, #0b1330 70%); }
+    .disc.solar_eclipse{ background:radial-gradient(circle at 35% 30%, #ff8a3d, #1a0a02 70%); }
+    .disc.golden_night{ background:radial-gradient(circle at 35% 30%, #e9c765, #0a0a0a 70%); }
+    .disc.deep_blue{ background:radial-gradient(circle at 35% 30%, #4f8fd6, #08182f 70%); }
+    .disc.classic_white{ background:radial-gradient(circle at 35% 30%, #ffffff, #cfc9b8 70%); }
+
+    .color-picker-row {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .color-input-style {
+      width: 50px; height: 30px; padding: 0; background: transparent; 
+      border: 1px solid var(--line); cursor: pointer; border-radius: 4px;
+    }
+   
+    .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; }
+    .toggle-row:not(:last-child){ border-bottom:1px solid var(--line); }
+    .toggle-row .t-label{ font-size:11px; color:var(--starlight); font-family:'Space Mono',monospace; }
+    .switch{ position:relative; width:38px; height:20px; flex-shrink:0; }
+    .switch input{ opacity:0; width:0; height:0; }
+    .slider-track{
+      position:absolute; inset:0; background:#1c2440; border-radius:20px;
+      transition:.2s; border:1px solid var(--line);
+    }
+    .slider-track::before{
+      content:''; position:absolute; width:14px; height:14px; left:2px; top:2px;
+      background:var(--muted); border-radius:50%; transition:.2s;
+    }
+    .switch input:checked + .slider-track{ background:#3a3115; border-color:var(--brass-dim); }
+    .switch input:checked + .slider-track::before{ transform:translateX(18px); background:var(--brass); box-shadow:0 0 6px #c9a22788; }
+   
+    .actions{
+      padding:16px 26px 22px; border-top:1px solid var(--line);
+      background:var(--panel); display:flex; flex-direction:column; gap:10px;
+    }
+    .btn-row{ display:flex; gap:8px; }
+    .btn-ghost{
+      flex:1; padding:10px; background:transparent; border:1px solid var(--line);
+      color:var(--muted); border-radius:4px; font-family:'Space Mono',monospace;
+      font-size:10px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+      text-align:center; transition:.15s;
+    }
+    .btn-ghost:hover{ border-color:var(--brass-dim); color:var(--starlight); }
+    .download-btn{
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      padding:16px; background:linear-gradient(180deg,#d9b13a,var(--brass));
+      color:#1a1200; text-align:center; text-decoration:none; border-radius:4px;
+      font-family:'Cormorant Garamond',serif; font-weight:600; font-style:italic; font-size:17px;
+      box-shadow:0 4px 14px #c9a22733;
+    }
+    .download-btn:hover{ filter:brightness(1.06); }
+    
+    .sub-setting-box {
+      border-left: 2px dashed var(--line); padding-left: 10px; margin-top: 8px; margin-bottom: 15px;
+    }
+
+    /* ---------- AUTH STYLE ---------- */
+    .auth-box {
+      border: 1px solid var(--brass-dim); background: #111625; padding: 12px; border-radius: 6px; margin-bottom: 16px;
+    }
+    .auth-btn-row { display: flex; gap: 5px; margin-top: 8px; }
+    .auth-btn-row button {
+      flex: 1; padding: 6px; font-family: inherit; font-size: 10px; cursor: pointer; background: var(--line); border: 1px solid var(--muted); color: white; border-radius: 4px;
+    }
+    .auth-btn-row button:hover { border-color: var(--brass); color: var(--brass); }
+    .user-pill { display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+    .logout-link { color: #f43f5e; text-decoration: none; font-size: 10px; border: 1px solid #f43f5e33; padding: 2px 6px; border-radius: 3px; }
+    .logout-link:hover { background: #f43f5e11; }
+    
+    /* ---------- SAVED ITEMS ---------- */
+    .saved-list { list-style: none; padding: 0; margin: 8px 0 0 0; max-height: 150px; overflow-y: auto; }
+    .saved-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; font-size: 11px; border-bottom: 1px solid #1a233a; cursor: pointer;
+    }
+    .saved-item:hover { background: #161f36; }
+    .saved-item .del-btn { color: #f43f5e; cursor: pointer; font-size: 14px; padding: 0 4px; }
+    .saved-item .del-btn:hover { transform: scale(1.2); }
+  </style>
+</head>
+<body>
+ 
+  <div class="preview-side">
+    <div class="starfield"></div>
+    <div class="status-pill" id="status-pill"><span class="status-dot"></span><span id="status-text" data-key="status-ready">READY</span></div>
+    <div class="frame-wrap" id="frame-wrap">
+      <img id="main-preview" src="/static/preview.png">
+    </div>
+  </div>
+ 
+  <div class="controls-side">
+    <div class="instrument-header">
+      <svg class="astrolabe" width="42" height="42" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#c9a227" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="50" cy="50" r="34" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.4"/>
+        <g stroke="#c9a227" stroke-width="1" opacity="0.8">
+          <line x1="50" y1="4" x2="50" y2="14"/>
+          <line x1="50" y1="86" x2="50" y2="96"/>
+          <line x1="4" y1="50" x2="14" y2="50"/>
+          <line x1="86" y1="50" x2="96" y2="50"/>
+        </g>
+        <polygon points="50,20 56,50 50,80 44,50" fill="#c9a227" opacity="0.85"/>
+        <circle cx="50" cy="50" r="3" fill="#f4ecd8"/>
+      </svg>
+      <div>
+        <h1 data-key="header-title">Observatorium</h1>
+        <p data-key="header-subtitle">Personal Astro Poster</p>
+      </div>
+      <div class="lang-switcher">
+        <button type="button" class="lang-btn" onclick="setLang('bs')">BS</button>
+        <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+      </div>
+    </div>
+ 
+    <div class="form-scroll">
+      
+      <div class="auth-box">
+        {% if current_user.is_authenticated %}
+          <div class="user-pill">
+            <span>👤 <strong style="color: var(--brass);">{{ current_user.username }}</strong></span>
+            <a href="/logout" class="logout-link">LOGOUT</a>
+          </div>
+        {% else %}
+          <div id="auth-logged-out">
+            <div class="row">
+              <input type="text" id="auth-username" placeholder="Username" style="padding: 5px;">
+              <input type="password" id="auth-password" placeholder="Password" style="padding: 5px;">
+            </div>
+            <div class="auth-btn-row">
+              <button type="button" onclick="handleAuth('/login')">LOGIN</button>
+              <button type="button" onclick="handleAuth('/register')">REGISTER</button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <details class="plate" open style="border-color: var(--brass-dim);">
+        <summary><span class="numeral">★</span> <span>Moji Sačuvani Radovi</span></summary>
+        <div class="plate-body" style="padding: 5px 10px 10px;">
+          <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+            <input type="text" id="save-project-title" placeholder="Naziv ovog rada..." value="Moj Poster" style="padding: 6px;">
+            <button type="button" onclick="sacuvajPosterUBazu()" style="background: #15803d; border: none; border-radius: 4px; padding: 0 10px; color: white; font-family: inherit; font-size: 11px; cursor: pointer;">SAVE</button>
+          </div>
+          <ul class="saved-list" id="db-saved-posters">
+            </ul>
+        </div>
+      </details>
+      {% endif %}
+
+      <form id="config-form" onsubmit="event.preventDefault();">
+ 
+      <details class="plate" open>
+        <summary><span class="numeral">I</span> <span data-key="sec-1">Text Position & Style</span></summary>
+        <div class="plate-body">
+          <label class="field-label" data-key="label-main-title">Main Title</label>
+          <input type="text" name="ime_prezime" value="" placeholder="YOUR NAME" oninput="updatePreview()">
+          
+          <div class="sub-setting-box">
+            <label class="field-label"><span data-key="label-main-height">Title Height</span> <span class="val" id="v_y_main">2350</span></label>
+            <input type="range" name="y_main" min="1800" max="3200" value="2350" oninput="liveVal('y_main');updatePreview()">
+            
+            <label class="field-label"><span>Letter Spacing</span> <span class="val" id="v_ls_main">15</span></label>
+            <input type="range" name="ls_main" min="0" max="60" value="15" oninput="liveVal('ls_main');updatePreview()">
+            
+            <label class="field-label">Text Transform</label>
+            <select name="trans_main" onchange="updatePreview()">
+              <option value="uppercase">ALL CAPS</option>
+              <option value="none">Normal Input</option>
+              <option value="lowercase">lowercase</option>
+            </select>
+          </div>
+ 
+          <label class="field-label" data-key="label-sub-title">Subtitle</label>
+          <input type="text" name="podnaslov" value="" placeholder="YOUR TITLE" oninput="updatePreview()">
+          
+          <div class="sub-setting-box">
+            <label class="field-label"><span data-key="label-sub-height">Subtitle Height</span> <span class="val" id="v_y_sub">2550</span></label>
+            <input type="range" name="y_sub" min="1900" max="3300" value="2550" oninput="liveVal('y_sub');updatePreview()">
+            
+            <label class="field-label"><span>Letter Spacing</span> <span class="val" id="v_ls_sub">8</span></label>
+            <input type="range" name="ls_sub" min="0" max="40" value="8" oninput="liveVal('ls_sub');updatePreview()">
+
+            <label class="field-label">Text Transform</label>
+            <select name="trans_sub" onchange="updatePreview()">
+              <option value="uppercase">ALL CAPS</option>
+              <option value="none">Normal Input</option>
+              <option value="lowercase">lowercase</option>
+            </select>
+          </div>
+ 
+          <label class="field-label" style="text-decoration: underline;">Info Block Styling</label>
+          <div class="sub-setting-box">
+            <label class="field-label"><span data-key="label-info-height">Info Block Height</span> <span class="val" id="v_y_info">2850</span></label>
+            <input type="range" name="y_info" min="2000" max="3200" value="2850" oninput="liveVal('y_info');updatePreview()">
+            
+            <label class="field-label"><span>Letter Spacing</span> <span class="val" id="v_ls_info">4</span></label>
+            <input type="range" name="ls_info" min="0" max="30" value="4" oninput="liveVal('ls_info');updatePreview()">
+
+            <label class="field-label">Text Transform</label>
+            <select name="trans_info" onchange="updatePreview()">
+              <option value="uppercase">ALL CAPS</option>
+              <option value="none">Normal Input</option>
+            </select>
+          </div>
+        </div>
+      </details>
+ 
+      <details class="plate" open>
+        <summary class="plate-head"><span class="numeral">II</span> <span data-key="sec-2">Celestial Coordinates</span></summary>
+        <div class="plate-body">
+          <label class="field-label" data-key="label-datetime">Date (Y M D) &nbsp;|&nbsp; Time (H M)</label>
+          <div class="row" style="margin-bottom: 12px;">
+            <input type="text" name="datum_raw" value="" placeholder="YYYY MM DD" oninput="updatePreview()">
+            <input type="text" name="vrijeme_raw" value="" placeholder="HH MM" oninput="updatePreview()">
+          </div>
+
+          <label class="field-label" data-key="label-map-search">📍 Search city or click on the map</label>
+          <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <input type="text" id="map-search-input" placeholder="e.g. London, UK..." onkeydown="if(event.key==='Enter'){event.preventDefault(); pretraziGrad();}">
+            <button type="button" onclick="pretraziGrad()" id="map-search-btn" style="padding: 0 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;" data-key="btn-search">Search</button>
+          </div>
+          
+          <button type="button" onclick="locateme()" style="width: 100%; margin-bottom: 10px; padding: 6px; background: #1e293b; color: #c9a227; border: 1px dashed var(--line); border-radius: 4px; cursor: pointer; font-size: 10px; font-family: inherit;">
+            🎯 USE MY CURRENT LOCATION
+          </button>
+
+          <div id="map" style="width: 100%; height: 200px; background: #e5e7eb; margin-bottom: 10px; border-radius: 4px;"></div>
+
+          <label class="field-label" data-key="label-latlon">Geographic Latitude / Longitude</label>
+          <div class="row">
+            <input type="text" id="input-lat" name="lat" value="0" oninput="updatePreview()">
+            <input type="text" id="input-lon" name="lon" value="0" oninput="updatePreview()">
+          </div>
+        </div>
+      </details>
+ 
+      <details class="plate" open>
+        <summary><span class="numeral">III</span> <span data-key="sec-3">Colors & Palette</span></summary>
+        <div class="plate-body">
+          
+          <label class="field-label" data-key="label-presets" style="margin-bottom: 8px;">Quick Astro Themes</label>
+          <div class="palette-grid" style="margin-bottom: 20px;">
+            <label class="swatch" onclick="primijeniPreset('#05070d', '#ffffff', '#ffffff', '#ffffff')">
+              <div class="disc midnight"></div><span class="name">Midnight</span>
+            </label>
+            <label class="swatch" onclick="primijeniPreset('#1a0a02', '#ff8a3d', '#ff8a3d', '#ff8a3d')">
+              <div class="disc solar_eclipse"></div><span class="name">Eclipse</span>
+            </label>
+            <label class="swatch" onclick="primijeniPreset('#0a0a0a', '#e9c765', '#e9c765', '#e9c765')">
+              <div class="disc golden_night"></div><span class="name">Golden</span>
+            </label>
+            <label class="swatch" onclick="primijeniPreset('#08182f', '#4f8fd6', '#4f8fd6', '#4f8fd6')">
+              <div class="disc deep_blue"></div><span class="name">Deep Blue</span>
+            </label>
+            <label class="swatch" onclick="primijeniPreset('#ffffff', '#0a0a0a', '#0a0a0a', '#0a0a0a')">
+              <div class="disc classic_white"></div><span class="name">Classic</span>
+            </label>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--line); margin-bottom: 15px;">
+
+          <label class="field-label" data-key="label-custom-colors" style="margin-bottom: 8px;">Custom Colors (Canva Style)</label>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="color-picker-row">
+              <span class="t-label" data-key="picker-bg-text">Background Color</span>
+              <input type="color" id="picker-bg" name="boja_pozadine" value="#05070d" onchange="updatePreview()" class="color-input-style">
+            </div>
+            <div class="color-picker-row">
+              <span class="t-label" data-key="picker-frame-text">Outer Frame Color</span>
+              <input type="color" id="picker-frame" name="boja_okvira" value="#ffffff" onchange="updatePreview()" class="color-input-style">
+            </div>
+            <div class="color-picker-row">
+              <span class="t-label" data-key="picker-stars-text">Stars & Lines Color</span>
+              <input type="color" id="picker-stars" name="boja_zvijezda" value="#ffffff" onchange="updatePreview()" class="color-input-style">
+            </div>
+            <div class="color-picker-row">
+              <span class="t-label" data-key="picker-text-text">Text Color</span>
+              <input type="color" id="picker-text" name="boja_teksta" value="#ffffff" onchange="updatePreview()" class="color-input-style">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="plate" open>
+        <summary><span class="numeral">IV</span> <span data-key="sec-4">Typography</span></summary>
+        <div class="plate-body">
+          <label class="field-label" data-key="label-font">Select Font</label>
+          
+          <input type="text" id="font-search-input" oninput="filtrirajFontove()" placeholder="Search font..." style="margin-bottom: 6px; padding: 6px 10px; font-size: 11px; background: #0b101d;">
+          
+          <select id="font-select-dropdown" name="font_choice" onchange="updatePreview()">
+              <option value="arial.ttf">Standard (Arial)</option>
+              {% for f in fontovi %}
+                  <option value="{{ f }}">{{ f.split('/')[-1].replace('.ttf','').replace('.otf','') }}</option>
+              {% endfor %}
+          </select>
+        </div>
+      </details>
+ 
+      <details class="plate" open>
+        <summary><span class="numeral">V</span> <span data-key="sec-5">Poster Inscriptions</span></summary>
+        <div class="plate-body">
+          <label class="field-label" data-key="label-location">Location</label>
+          <input type="text" name="lokacija" value="" placeholder="CITY, COUNTRY" oninput="updatePreview()">
+          <label class="field-label" data-key="label-date-text">Date (text)</label>
+          <input type="text" name="datum_txt" value="" placeholder="DATE" oninput="updatePreview()">
+        </div>
+      </details>
+ 
+      <details class="plate" open>
+        <summary><span class="numeral">VI</span> <span data-key="sec-6">Display Elements</span></summary>
+        <div class="plate-body">
+          <label class="field-label" data-key="label-shape">Star Map Shape</label>
+          <select name="oblik" onchange="updatePreview()" style="margin-bottom: 15px;">
+              <option value="krug" data-key="opt-circle">Classic Circle</option>
+              <option value="srce" data-key="opt-heart">Romantic Heart</option>
+          </select>
+
+          <div class="toggle-row">
+            <span class="t-label" data-key="toggle-frame">Outer Frame</span>
+            <label class="switch"><input type="checkbox" name="okvir" checked onchange="updatePreview()"><span class="slider-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="t-label" data-key="toggle-grid">Astro Grid</span>
+            <label class="switch"><input type="checkbox" name="grid" checked onchange="updatePreview()"><span class="slider-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="t-label" data-key="toggle-lines">Constellations</span>
+            <label class="switch"><input type="checkbox" name="lines" checked onchange="updatePreview()"><span class="slider-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="t-label" data-key="toggle-moon">Show Moon Phase</span>
+            <label class="switch"><input type="checkbox" name="prikazi_mjesec" checked onchange="updatePreview()"><span class="slider-track"></span></label>
+          </div>
+        </div>
+      </details>
+ 
+    </form>
+   </div>
+ 
+    <div class="actions">
+      <div class="btn-row">
+        <div class="btn-ghost" onclick="randomizeLayout()" data-key="btn-surprise">✨ Surprise Me</div>
+        <div class="btn-ghost" onclick="resetForm()" data-key="btn-reset">↺ Reset</div>
+      </div>
+      <a href="/static/preview.png" download id="download-link" class="download-btn"><span data-key="btn-save">✦ Save Poster</span></a>
+    </div>
+  </div>
+ 
+<script>
+  const form = document.getElementById('config-form');
+  const img = document.getElementById('main-preview');
+  const statusPill = document.getElementById('status-pill');
+  const statusText = document.getElementById('status-text');
+  let timeout = null;
+  let trenutniJezik = 'en';
+
+  const prevodi = {
+    bs: {
+      'status-ready': 'SPREMNO',
+      'status-drawing': 'CRTANJE...',
+      'status-error': 'GREŠKA',
+      'header-title': 'Observatorium',
+      'header-subtitle': 'Lični Astro Poster',
+      'sec-1': 'Položaj i Stil Teksta',
+      'sec-2': 'Nebeska Koordinata',
+      'sec-3': 'Boje i Paleta',
+      'sec-4': 'Typographia',
+      'sec-5': 'Natpisi na Posteru',
+      'sec-6': 'Elementi Prikaza',
+      'label-main-title': 'Glavni Naslov',
+      'label-main-height': 'Visina Naslova',
+      'label-sub-title': 'Podnaslov',
+      'label-sub-height': 'Visina Podnaslova',
+      'label-info-height': 'Visina Info Bloka',
+      'label-datetime': 'Datum (G M D)   |   Vrijeme (H M)',
+      'label-latlon': 'Geografska Širina | Dužina',
+      'label-presets': 'Brze Astro Teme',
+      'label-custom-colors': 'Prilagođene Boje (Canva Style)',
+      'picker-bg-text': 'Boja Pozadine',
+      'picker-frame-text': 'Boja Okvira / Kontura',
+      'picker-stars-text': 'Boja Zvijezda i Linija',
+      'picker-text-text': 'Boja Teksta',
+      'label-font': 'Odaberi Font',
+      'label-location': 'Lokacija',
+      'label-date-text': 'Datum (tekst)',
+      'label-shape': 'Oblik Mape Zvijezda',
+      'opt-circle': 'Klasični Krug',
+      'opt-heart': 'Romantično Srce',
+      'toggle-frame': 'Vanjski okvir',
+      'toggle-grid': 'Astro Grid',
+      'toggle-lines': 'Sazviježđa',
+      'toggle-moon': 'Prikaži fazu Mjeseca',
+      'btn-surprise': '✨ Iznenadi Me',
+      'btn-reset': '↺ Reset',
+      'btn-save': '✦ Sačuvaj Poster',
+      'label-map-search': '📍 Pretraži grad ili klikni na mapu',
+      'btn-search': 'Traži',
+      'placeholder-search': 'Npr. Tuzla, BiH...',
+      'placeholder-font': 'Pretraži font...'
+    },
+    en: {
+      'status-ready': 'READY',
+      'status-drawing': 'RENDERING...',
+      'status-error': 'ERROR',
+      'header-title': 'Observatorium',
+      'header-subtitle': 'Personal Astro Poster',
+      'sec-1': 'Text Position & Style',
+      'sec-2': 'Celestial Coordinates',
+      'sec-3': 'Colors & Palette',
+      'sec-4': 'Typography',
+      'sec-5': 'Poster Inscriptions',
+      'sec-6': 'Display Elements',
+      'label-main-title': 'Main Title',
+      'label-main-height': 'Title Height',
+      'label-sub-title': 'Subtitle',
+      'label-sub-height': 'Subtitle Height',
+      'label-info-height': 'Info Block Height',
+      'label-datetime': 'Date (Y M D)   |   Time (H M)',
+      'label-latlon': 'Latitude | Longitude',
+      'label-presets': 'Quick Astro Themes',
+      'label-custom-colors': 'Custom Colors (Canva Style)',
+      'picker-bg-text': 'Background Color',
+      'picker-frame-text': 'Outer Frame Color',
+      'picker-stars-text': 'Stars & Lines Color',
+      'picker-text-text': 'Text Color',
+      'label-font': 'Select Font',
+      'label-location': 'Location',
+      'label-date-text': 'Date (text)',
+      'label-shape': 'Star Map Shape',
+      'opt-circle': 'Classic Circle',
+      'opt-heart': 'Romantic Heart',
+      'toggle-frame': 'Outer Frame',
+      'toggle-grid': 'Astro Grid',
+      'toggle-lines': 'Constellations',
+      'toggle-moon': 'Show Moon Phase',
+      'btn-surprise': '✨ Surprise Me',
+      'btn-reset': '↺ Reset',
+      'btn-save': '✦ Save Poster',
+      'label-map-search': '📍 Search city or click on the map',
+      'btn-search': 'Search',
+      'placeholder-search': 'e.g. London, UK...',
+      'placeholder-font': 'Search font...'
+    }
+  };
+
+  function setLang(jez) {
+    trenutniJezik = jez;
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+    
+    if(window.event && window.event.target) {
+      window.event.target.classList.add('active');
+    } else {
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if(btn.textContent.trim().toLowerCase() === jez) btn.classList.add('active');
+      });
+    }
+
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const kljuc = el.getAttribute('data-key');
+      if (prevodi[jez][kljuc]) {
+        if (el.tagName === 'OPTION') {
+          el.text = prevodi[jez][kljuc];
+        } else {
+          el.textContent = prevodi[jez][kljuc];
+        }
+      }
+    });
+
+    const searchInput = document.getElementById('map-search-input');
+    if (searchInput && prevodi[jez]['placeholder-search']) {
+      searchInput.placeholder = prevodi[jez]['placeholder-search'];
+    }
+
+    const fontSearch = document.getElementById('font-search-input');
+    if (fontSearch && prevodi[jez]['placeholder-font']) {
+      fontSearch.placeholder = prevodi[jez]['placeholder-font'];
+    }
+  }
+
+  function filtrirajFontove() {
+    const filterTekst = document.getElementById('font-search-input').value.toLowerCase();
+    const selectMeni = document.getElementById('font-select-dropdown');
+    const opcije = selectMeni.options;
+    for (let i = 0; i < opcije.length; i++) {
+      const imeFonta = opcije[i].text.toLowerCase();
+      if (imeFonta.includes(filterTekst)) {
+        opcije[i].style.display = "";
+      } else {
+        opcije[i].style.display = "none";
+      }
+    }
+  }
+ 
+  function liveVal(name){
+    const element = form.querySelector(`[name=${name}]`);
+    if(element) {
+      document.getElementById('v_' + name).textContent = element.value;
+    }
+  }
+
+  function primijeniPreset(bojaBg, bojaFrame, bojaStars, bojaText) {
+    document.getElementById('picker-bg').value = bojaBg;
+    document.getElementById('picker-frame').value = bojaFrame;
+    document.getElementById('picker-stars').value = bojaStars;
+    document.getElementById('picker-text').value = bojaText;
+    updatePreview();
+  }
+ 
+  function updatePreview(){
+    clearTimeout(timeout);
+    statusPill.classList.add('busy');
+    statusText.textContent = prevodi[trenutniJezik]['status-drawing'];
+    img.classList.add('loading');
+    timeout = setTimeout(() => {
+      const formData = new FormData(form);
+      fetch('/update', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          img.src = data.image_url;
+          document.getElementById('download-link').href = data.image_url;
+          img.classList.remove('loading');
+          statusPill.classList.remove('busy');
+          statusText.textContent = prevodi[trenutniJezik]['status-ready'];
+        })
+        .catch(() => {
+          img.classList.remove('loading');
+          statusPill.classList.remove('busy');
+          statusText.textContent = prevodi[trenutniJezik]['status-error'];
+        });
+    }, 250);
+  }
+ 
+  function resetForm(){
+    form.reset();
+    document.getElementById('font-search-input').value = "";
+    filtrirajFontove();
+    liveVal('y_main'); liveVal('y_sub'); liveVal('y_info');
+    liveVal('ls_main'); liveVal('ls_sub'); liveVal('ls_info');
+    updatePreview();
+  }
+ 
+  function randomizeLayout(){
+    const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    form.querySelector('[name=y_main]').value = rand(1800, 3200);
+    form.querySelector('[name=y_sub]').value = rand(1900, 3300);
+    form.querySelector('[name=y_info]').value = rand(2000, 3200);
+    form.querySelector('[name=ls_main]').value = rand(0, 40);
+    form.querySelector('[name=ls_sub]').value = rand(0, 25);
+    form.querySelector('[name=ls_info]').value = rand(0, 15);
+    
+    liveVal('y_main'); liveVal('y_sub'); liveVal('y_info');
+    liveVal('ls_main'); liveVal('ls_sub'); liveVal('ls_info');
+    
+    const randomHex = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    primijeniPreset(randomHex(), randomHex(), randomHex(), randomHex());
+  }
+ 
+  document.getElementById('frame-wrap').addEventListener('click', function(){
+    this.classList.toggle('zoomed');
+  });
+ 
+  // --- LEAFLET MAP INTERACTION LOGIC ---
+  let mojaloopMapa, mojMarker;
+
+  function pretraziGrad() {
+    const upit = document.getElementById('map-search-input').value;
+    if (!upit) return;
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(upit)}&limit=1&accept-language=${trenutniJezik}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const noviLat = parseFloat(data[0].lat);
+          const noviLon = parseFloat(data[0].lon);
+          
+          mojaloopMapa.setView([noviLat, noviLon], 11);
+          
+          let dijeloviNaziva = data[0].display_name.split(',');
+          let grad = dijeloviNaziva[0].toUpperCase();
+          let drzava = dijeloviNaziva.pop().trim().toUpperCase();
+          
+          const lokacijaInput = document.querySelector('[name=lokacija]');
+          if (lokacijaInput) {
+            lokacijaInput.value = `${grad}, ${drzava}`;
+          }
+          
+          osvjeziLokacijuIzMape(noviLat, noviLon);
+        } else {
+          alert(trenutniJezik === 'bs' ? "Grad nije pronađen. Pokušaj ponovo." : "City not found. Try again.");
+        }
+      })
+      .catch(() => alert(trenutniJezik === 'bs' ? "Greška pri povezivanju sa servisom." : "Error connecting to search service."));
+  }
+
+  function inicijalizujMapu() {
+    const pocetniLat = parseFloat(document.getElementById("input-lat").value)||20;
+    const pocetniLon = parseFloat(document.getElementById("input-lon").value)||0;
+
+    mojaloopMapa = L.map('map', { attributionControl: false }).setView([pocetniLat, pocetniLon], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(mojaloopMapa);
+
+    mojMarker = L.marker([pocetniLat, pocetniLon], { draggable: true }).addTo(mojaloopMapa);
+
+    mojaloopMapa.on('click', function(e) {
+      osvjeziLokacijuIzMape(e.latlng.lat, e.latlng.lng);
+    });
+
+    mojMarker.on('dragend', function(e) {
+      const pozicija = mojMarker.getLatLng();
+      osvjeziLokacijuIzMape(pozicija.lat, pozicija.lng);
+    });
+  }
+
+  function osvjeziLokacijuIzMape(lat, lon) {
+    document.getElementById('input-lat').value = lat.toFixed(4);
+    document.getElementById('input-lon').value = lon.toFixed(4);
+    mojMarker.setLatLng([lat, lon]);
+    updatePreview();
+  }
+
+  function locateme() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        mojaloopMapa.setView([lat, lon], 12);
+        osvjeziLokacijuIzMape(lat, lon);
+      }, () => {
+        alert(trenutniJezik === 'bs' ? "Nemoguće pristupiti lokaciji." : "Unable to retrieve your location.");
+      });
+    } else {
+      alert(trenutniJezik === 'bs' ? "Geolokacija nije podržana u vašem browseru." : "Geolocation is not supported by your browser.");
+    }
+  }
+
+
+  // --- JS LOGIKA ZA FULL-STACK AUTH I ČUVANJE RADova ---
+
+  function handleAuth(url) {
+    const u = document.getElementById('auth-username').value;
+    const p = document.getElementById('auth-password').value;
+    if(!u || !p) return alert("Unesite korisničko ime i lozinku.");
+    
+    let fd = new FormData();
+    fd.append('username', u);
+    fd.append('password', p);
+    
+    fetch(url, { method: 'POST', body: fd })
+      .then(res => res.json())
+      .then(data => {
+        if(data.error) {
+          alert(data.error);
+        } else {
+          alert(data.message);
+          window.location.reload(); // Osvježi sesiju i UI
+        }
+      });
+  }
+
+  function sacuvajPosterUBazu() {
+    const naslov = document.getElementById('save-project-title').value;
+    const formData = new FormData(form);
+    formData.append('naslov_projekta', naslov);
+    
+    fetch('/save_poster', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        ucitajPostereIzBaze();
+      });
+  }
+
+  function ucitajPostereIzBaze() {
+    const lista = document.getElementById('db-saved-posters');
+    if(!lista) return; // Korisnik nije ulogovan pa element ne postoji
+    
+    fetch('/get_posters')
+      .then(res => res.json())
+      .then(data => {
+        lista.innerHTML = "";
+        if(data.posters.length === 0) {
+          lista.innerHTML = "<li style='padding:6px; font-size:10px; color:var(--muted);'>Nema sačuvanih radova.</li>";
+          return;
+        }
+        data.posters.forEach(p => {
+          const li = document.createElement('li');
+          li.className = "saved-item";
+          li.innerHTML = `
+            <span onclick="ucitajDizajn(${p.id})">📂 <strong>${p.naslov}</strong> (${p.ime_prezime})</span>
+            <span class="del-btn" onclick="obrisiDizajn(${p.id}, event)">×</span>
+          `;
+          lista.appendChild(li);
+        });
+      });
+  }
+
+  function ucitajDizajn(id) {
+    statusPill.classList.add('busy');
+    statusText.textContent = "UČITAVANJE...";
+    fetch(`/load_poster/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        // Popunjavanje svih polja u formi dynamic layer-om
+        for (const [key, val] of Object.entries(data)) {
+          const input = form.querySelector(`[name="${key}"]`);
+          if (input) {
+            if (input.type === 'checkbox') {
+              input.checked = (val === 'on');
+            } else {
+              input.value = val;
+            }
+          }
+        }
+        // Osvježi Leaflet marker poziciju
+        const nLat = parseFloat(data.lat);
+        const nLon = parseFloat(data.lon);
+        mojaloopMapa.setView([nLat, nLon], 8);
+        mojMarker.setLatLng([nLat, nLon]);
+        
+        // Sinhronizacija tekstualnih labela ispod slidera
+        liveVal('y_main'); liveVal('y_sub'); liveVal('y_info');
+        liveVal('ls_main'); liveVal('ls_sub'); liveVal('ls_info');
+        
+        updatePreview();
+      });
+  }
+
+  function obrisiDizajn(id, event) {
+    event.stopPropagation(); // Zaustavi klik da ne učita poster u isto vrijeme
+    if(!confirm("Da li sigurno želiš obrisati ovaj rad?")) return;
+    
+    fetch(`/delete_poster/${id}`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        ucitajPostereIzBaze();
+      });
+  }
+
+  // --- RUNTIME STARTUP LOGIC ---
+  window.onload = function() {
+    form.reset();
+    document.getElementById('font-search-input').value = "";
+    inicijalizujMapu();
+    setLang('en');
+    ucitajPostereIzBaze();
+    updatePreview();
+  };  
+</script>
+</body>
+</html>  
