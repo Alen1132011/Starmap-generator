@@ -7,7 +7,11 @@ Built with Flask, Skyfield for the astronomical calculations, and Pillow for the
 > **Before you start**
 >
 > - If the text doesn't appear on the poster immediately, **that's completely normal**. Fill in **all required fields** (date, time, location, coordinates, etc.). The poster is generated only after enough information is provided.
+> - If the text is still missing after filling everything in, **try selecting a different font**. Some fonts may not support every character or may fail to load depending on your system.
 > - If you're using the online demo, the first load may take **up to 50 seconds** because it's hosted on Render's free tier. Just wait for the app to wake up.
+> - The online demo is intended for testing. If several people generate posters at the same time, or if the server reaches Render's free resource limits, it may restart or temporarily become unavailable.
+
+
 
 ---
 
@@ -138,6 +142,16 @@ Starmap-generator/
 ├── templates/          # HTML templates
 └── static/             # Generated poster previews
 ```
+
+---
+
+## 🖼 Gallery
+
+Here are a few example posters created with the generator.
+
+<img width="2400" height="3400" alt="preview (1)" src="https://github.com/user-attachments/assets/7533eec4-4779-452d-be1c-420e0ecefc58" />
+<img width="2400" height="3400" alt="preview" src="https://github.com/user-attachments/assets/f149865d-2a05-4adb-8737-5c02a0002ed1" />
+
 
 ---
 
