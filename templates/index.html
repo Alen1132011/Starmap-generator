@@ -48,7 +48,7 @@
         radial-gradient(1px 1px at 92% 10%, #ffffff44 50%, transparent 50%),
         radial-gradient(1px 1px at 15% 90%, #ffffff55 50%, transparent 50%);
       background-repeat:repeat; background-size:400px 400px;
-      animation:twinkle 6s ease-in-out infinite;
+      animation:twinkle 6s ease-in-out infinite; 
       opacity:0.5;
     }
     @keyframes twinkle{ 0%,100%{opacity:.35;} 50%{opacity:.65;} }
@@ -352,7 +352,7 @@
         <summary><span class="numeral">I</span> <span data-key="sec-1">Text Position & Style</span></summary>
         <div class="plate-body">
           <label class="field-label" data-key="label-main-title">Main Title</label>
-          <input type="text" name="ime_prezime" value="ALEN VILUŠIĆ" oninput="updatePreview()">
+          <input type="text" name="ime_prezime" value="" placeholder="YOUR NAME" oninput="updatePreview()">
           
           <div class="sub-setting-box">
             <label class="field-label"><span data-key="label-main-height">Title Height</span> <span class="val" id="v_y_main">2350</span></label>
@@ -370,7 +370,7 @@
           </div>
  
           <label class="field-label" data-key="label-sub-title">Subtitle</label>
-          <input type="text" name="podnaslov" value="THE NIGHT WE MET" oninput="updatePreview()">
+          <input type="text" name="podnaslov" value="" placeholder="YOUR TITLE" oninput="updatePreview()">
           
           <div class="sub-setting-box">
             <label class="field-label"><span data-key="label-sub-height">Subtitle Height</span> <span class="val" id="v_y_sub">2550</span></label>
@@ -409,8 +409,8 @@
         <div class="plate-body">
           <label class="field-label" data-key="label-datetime">Date (Y M D) &nbsp;|&nbsp; Time (H M)</label>
           <div class="row" style="margin-bottom: 12px;">
-            <input type="text" name="datum_raw" value="2026 05 11" oninput="updatePreview()">
-            <input type="text" name="vrijeme_raw" value="22 30" oninput="updatePreview()">
+            <input type="text" name="datum_raw" value="" placeholder="YYYY MM DD" oninput="updatePreview()">
+            <input type="text" name="vrijeme_raw" value="" placeholder="HH MM" oninput="updatePreview()">
           </div>
 
           <label class="field-label" data-key="label-map-search">📍 Search city or click on the map</label>
@@ -427,8 +427,8 @@
 
           <label class="field-label" data-key="label-latlon">Geographic Latitude / Longitude</label>
           <div class="row">
-            <input type="text" id="input-lat" name="lat" value="44.53" oninput="updatePreview()">
-            <input type="text" id="input-lon" name="lon" value="18.66" oninput="updatePreview()">
+            <input type="text" id="input-lat" name="lat" value="0" oninput="updatePreview()">
+            <input type="text" id="input-lon" name="lon" value="0" oninput="updatePreview()">
           </div>
         </div>
       </details>
@@ -500,9 +500,9 @@
         <summary><span class="numeral">V</span> <span data-key="sec-5">Poster Inscriptions</span></summary>
         <div class="plate-body">
           <label class="field-label" data-key="label-location">Location</label>
-          <input type="text" name="lokacija" value="LONDON, UK" oninput="updatePreview()">
+          <input type="text" name="lokacija" value="" placeholder="CITY, COUNTRY" oninput="updatePreview()">
           <label class="field-label" data-key="label-date-text">Date (text)</label>
-          <input type="text" name="datum_txt" value="11. MAY 2026." oninput="updatePreview()">
+          <input type="text" name="datum_txt" value="" placeholder="DATE" oninput="updatePreview()">
         </div>
       </details>
  
@@ -793,10 +793,10 @@
   }
 
   function inicijalizujMapu() {
-    const pocetniLat = parseFloat(document.getElementById('input-lat').value);
-    const pocetniLon = parseFloat(document.getElementById('input-lon').value);
+    const pocetniLat = parseFloat(document.getElementById("input-lat").value)||20;
+    const pocetniLon = parseFloat(document.getElementById("input-lon").value)||0;
 
-    mojaloopMapa = L.map('map', { attributionControl: false }).setView([pocetniLat, pocetniLon], 8);
+    mojaloopMapa = L.map('map', { attributionControl: false }).setView([pocetniLat, pocetniLon], 2);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19
@@ -947,7 +947,7 @@
     setLang('en');
     ucitajPostereIzBaze();
     updatePreview();
-  };
-</script>
-</body>
-</html> 
+  };  
+</script>          
+</body>    
+</html>       

@@ -29,7 +29,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     posters = db.relationship('Poster', backref='author', lazy=True, cascade="all, delete-orphan")
-  
+
 class Poster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -200,10 +200,10 @@ def napravi_starmap_pro(podaci):
 
     ts = load.timescale()
     try:
-        y, m, d = map(int, podaci.get('datum_raw', '2026 05 11').split())
-        h, mn = map(int, podaci.get('vrijeme_raw', '22 30').split())
-        lon, lat = float(podaci.get('lon', 18.66)), float(podaci.get('lat', 44.53))
-    except: y, m, d, h, mn, lon, lat = 2026, 5, 11, 22, 30, 18.66, 44.53
+        y, m, d = map(int, (podaci.get('datum_raw') or '2000 01 01').split())
+        h, mn = map(int, (podaci.get('vrijeme_raw') or '00 00').split())
+        lon, lat = float(podaci.get('lon') or 0), float(podaci.get('lat') or 0)
+    except: y, m, d, h, mn, lon, lat = 2000, 1, 1, 0, 0, 0, 0
 
     t = ts.utc(y, m, d, h, mn)
     lst = (18.697374558 + 24.06570982441908 * (t.ut1 - 2451545.0) + lon / 15.0) % 24
@@ -454,5 +454,6 @@ def delete_poster(poster_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all() # Automatska inicijalizacija baze na startu
-    app.run(debug=True)
-            
+     
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port) 

@@ -1,0 +1,16 @@
+# Python privremeni fajlovi
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# Baza podataka (da ti ne pregazi tuđu bazu na serveru)
+instance/
+starmap.db
+
+# Lokalni statički fajlovi
+static/preview.png
