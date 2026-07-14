@@ -208,40 +208,14 @@ def napravi_starmap_pro(podaci):
     t = ts.utc(y, m, d, h, mn)
     lst = (18.697374558 + 24.06570982441908 * (t.ut1 - 2451545.0) + lon / 15.0) % 24
 
-    # --- POBOLJŠANA I ISPRAVLJENA STEREOGRAFSKA REŠETKA (GRID) ---
     if podaci.get('grid') == 'on':
         grid_col = (*zvijezde_boja, 45)
-        
-        # 1. Paralele (horizontalni lukovi) svako 15 stepeni
-        for lat_deg in range(-75, 76, 15):
-            tacke_linije = []
-            for lon_deg in range(-90, 91, 2):
-                lon_rad = math.radians(lon_deg)
-                lat_rad = math.radians(lat_deg)
-                
-                imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
-                if imenilac > 0:
-                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = cy - R * (math.sin(lat_rad)) / imenilac
-                    tacke_linije.append((x, y))
-            if len(tacke_linije) > 1:
-                draw_nebo.line(tacke_linije, fill=grid_col, width=3)
-                
-        # 2. Meridijani (vertikalni lukovi) svako 15 stepeni
-        for lon_deg in range(-75, 76, 15):
-            tacke_linije = []
-            for lat_deg in range(-90, 91, 2):
-                lon_rad = math.radians(lon_deg)
-                lat_rad = math.radians(lat_deg)
-                
-                imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
-                if imenilac > 0:
-                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = cy - R * (math.sin(lat_rad)) / imenilac
-                    tacke_linije.append((x, y))
-            if len(tacke_linije) > 1:
-                draw_nebo.line(tacke_linije, fill=grid_col, width=3)
-    # --- KRAJ REŠETKE ---
+        for alt_deg in [30, 60]:
+            r_g = R * (1 - alt_deg/90)
+            draw_nebo.ellipse([cx-r_g, cy-r_g, cx+r_g, cy+r_g], outline=grid_col, width=3)
+        for az in range(0, 360, 30):
+            ang = math.radians(az)
+            draw_nebo.line([(cx, cy), (cx+R*math.sin(ang), cy-R*math.cos(ang))], fill=grid_col, width=2)
 
     pos_map = {}
     for hid, s in stars_df.iterrows():
@@ -351,16 +325,16 @@ def register():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '').strip()
     if not username or not password:
-        return jsonify({'error': 'Korisničko ime i lozinka su obavezni.'}), 400
+        return jsonify({'error': 'Username and password are required.'}), 400
     if User.query.filter_by(username=username).first():
-        return jsonify({'error': 'Korisničko ime je zauzeto.'}), 400
+        return jsonify({'error': 'Username is already taken.'}), 400
     
     hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
     new_user = User(username=username, password_hash=hashed_pw)
     db.session.add(new_user)
     db.session.commit()
     login_user(new_user)
-    return jsonify({'message': 'Uspješna registracija!', 'username': new_user.username})
+    return jsonify({'message': 'Registration successful!', 'username': new_user.username})
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -389,72 +363,4 @@ def save_poster():
         y_main=data.get('y_main'),
         ls_main=data.get('ls_main'),
         trans_main=data.get('trans_main'),
-        podnaslov=data.get('podnaslov'),
-        y_sub=data.get('y_sub'),
-        ls_sub=data.get('ls_sub'),
-        trans_sub=data.get('trans_sub'),
-        y_info=data.get('y_info'),
-        ls_info=data.get('ls_info'),
-        trans_info=data.get('trans_info'),
-        datum_raw=data.get('datum_raw'),
-        vrijeme_raw=data.get('vrijeme_raw'),
-        lat=data.get('lat'),
-        lon=data.get('lon'),
-        boja_pozadine=data.get('boja_pozadine'),
-        boja_okvira=data.get('boja_okvira'),
-        boja_zvijezda=data.get('boja_zvijezda'),
-        boja_teksta=data.get('boja_teksta'),
-        font_choice=data.get('font_choice'),
-        lokacija=data.get('lokacija'),
-        datum_txt=data.get('datum_txt'),
-        oblik=data.get('oblik'),
-        okvir='on' if 'okvir' in data else 'off',
-        grid='on' if 'grid' in data else 'off',
-        lines='on' if 'lines' in data else 'off',
-        prikazi_mjesec='on' if 'prikazi_mjesec' in data else 'off'
-    )
-    db.session.add(novi_poster)
-    db.session.commit()
-    return jsonify({'message': 'Rad je uspješno sačuvan na tvoj profil!'})
-
-@app.route('/get_posters', methods=['GET'])
-@login_required
-def get_posters():
-    radovi = [{
-        'id': p.id,
-        'naslov': p.naslov_projekta,
-        'ime_prezime': p.ime_prezime,
-        'lokacija': p.lokacija,
-        'datum_txt': p.datum_txt
-    } for p in current_user.posters]
-    return jsonify({'posters': radovi})
-
-@app.route('/load_poster/<int:poster_id>', methods=['GET'])
-@login_required
-def load_poster(poster_id):
-    p = Poster.query.filter_by(id=poster_id, user_id=current_user.id).first_or_404()
-    return jsonify({
-        'ime_prezime': p.ime_prezime, 'y_main': p.y_main, 'ls_main': p.ls_main, 'trans_main': p.trans_main,
-        'podnaslov': p.podnaslov, 'y_sub': p.y_sub, 'ls_sub': p.ls_sub, 'trans_sub': p.trans_sub,
-        'y_info': p.y_info, 'ls_info': p.ls_info, 'trans_info': p.trans_info,
-        'datum_raw': p.datum_raw, 'vrijeme_raw': p.vrijeme_raw, 'lat': p.lat, 'lon': p.lon,
-        'boja_pozadine': p.boja_pozadine, 'boja_okvira': p.boja_okvira, 'boja_zvijezda': p.boja_zvijezda, 'boja_teksta': p.boja_teksta,
-        'font_choice': p.font_choice, 'lokacija': p.lokacija, 'datum_txt': p.datum_txt, 'oblik': p.oblik,
-        'okvir': p.okvir, 'grid': p.grid, 'lines': p.lines, 'prikazi_mjesec': p.prikazi_mjesec
-    })
-
-@app.route('/delete_poster/<int:poster_id>', methods=['POST'])
-@login_required
-def delete_poster(poster_id):
-    p = Poster.query.filter_by(id=poster_id, user_id=current_user.id).first_or_404()
-    db.session.delete(p)
-    db.session.commit()
-    return jsonify({'message': 'Rad obrisan.'})
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() 
-
-   
-port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        podnaslov=data.get('
