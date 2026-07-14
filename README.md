@@ -4,9 +4,24 @@ A web app that generates personalized astronomical posters — enter a date, tim
 
 Built with Flask, Skyfield for the astronomical calculations, and Pillow for the actual drawing.
 
-## Live Demo
+> **Before you start**
+>
+> - If the text doesn't appear on the poster immediately, **that's completely normal**. Fill in **all required fields** (date, time, location, coordinates, etc.). The poster is generated only after enough information is provided.
+> - If you're using the online demo, the first load may take **up to 50 seconds** because it's hosted on Render's free tier. Just wait for the app to wake up.
 
-No hosted demo right now — this project relies on a local SQLite database and downloads star catalog/ephemeris data on first run, so it's honestly a much smoother experience run locally rather than deployed somewhere. Follow the install steps below, it only takes a few minutes.
+---
+
+## 🌐 Live Demo
+
+**Online version:**
+
+https://starmap-generator.onrender.com/
+
+> **Note:** Since the app is hosted on Render's free plan, the server goes to sleep after inactivity. The first visit may take around **30–50 seconds** while it starts up. After that, everything works normally.
+
+I still recommend running the project locally for the fastest experience.
+
+---
 
 ## Features
 
@@ -20,22 +35,26 @@ No hosted demo right now — this project relies on a local SQLite database and 
 - Custom colors for background, border, stars, and text
 - Account system (register/login) so you can save your posters and come back to them later
 
+---
+
 ## Requirements
 
-- **Python 3.10+** (Skyfield and newer Pillow releases play nicer with a recent Python)
+- **Python 3.10+**
 - **pip**
-- A few hundred MB of free space — Skyfield will download ephemeris data (`de421.bsp`) and the Hipparcos star catalog from the internet on first run
+- A few hundred MB of free space — Skyfield will download ephemeris data (`de421.bsp`) and the Hipparcos star catalog on first run
+
+---
 
 ## Local Installation
 
-**1. Clone the repo**
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Alen1132011/Starmap-generator.git
 cd Starmap-generator
 ```
 
-**2. Create a virtual environment** (recommended, keeps things clean)
+### 2. Create a virtual environment (recommended)
 
 ```bash
 python -m venv venv
@@ -54,53 +73,78 @@ venv\Scripts\activate.bat
 venv\Scripts\Activate.ps1
 ```
 
-**3. Install dependencies**
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**4. Run the app**
+### 4. Run the app
 
 ```bash
 python app.py
 ```
 
 On first run, the app will:
-- automatically create `starmap.db` (SQLite database for users and saved posters)
-- create the `fonts/` and `static/` folders if they don't exist yet
-- download the Hipparcos star catalog and `de421.bsp` ephemeris data from the internet (can take a couple of minutes depending on your connection — this only happens once, then it's cached locally)
 
-**5. Open it in your browser**
+- automatically create `starmap.db`
+- create the `fonts/` and `static/` folders if they don't exist
+- download the Hipparcos catalog and the `de421.bsp` ephemeris (this only happens once)
+
+### 5. Open your browser
 
 ```
 http://127.0.0.1:5000
 ```
 
-That's it — you're up and running, go make some posters.
+You're ready to generate your own star maps.
+
+---
 
 ## Fonts
 
-Want to use your own fonts for the poster text? Just drop `.ttf` or `.otf` files into the `fonts/` folder — the app scans it automatically and lists them in the dropdown next time you start it up.
+Want to use your own fonts?
 
-## Note
+Just drop any `.ttf` or `.otf` files into the `fonts/` folder. The application automatically scans the folder and adds them to the font selector the next time it starts.
 
-This is a development setup — it runs with `debug=True` and a local SQLite file, which is fine for local use and testing. If you ever wanted to deploy this publicly, you'd want to:
-- turn off debug mode
-- replace `SECRET_KEY` with something actually secret and unique
-- consider a proper database (PostgreSQL, etc.) instead of SQLite
+---
+
+## Notes
+
+This project is mainly intended for local use.
+
+The online demo is provided so you can quickly try it out, but I recommend running it locally because:
+
+- it starts instantly
+- poster generation is faster
+- there are no Render cold starts
+- downloads are cached locally after the first run
+
+If you deploy this yourself, consider:
+
+- disabling debug mode
+- using a secure `SECRET_KEY`
+- replacing SQLite with PostgreSQL (or another production database)
+
+---
 
 ## Project Structure
 
-```
+```text
 Starmap-generator/
-├── app.py              # all backend logic (Flask routes, astronomy, drawing)
+├── app.py              # Flask backend, astronomy calculations and drawing
 ├── requirements.txt    # Python dependencies
-├── fonts/               # .ttf/.otf fonts for poster text
-├── templates/           # HTML templates (frontend)
-└── static/              # generated posters (preview.png)
+├── fonts/              # Custom fonts (.ttf/.otf)
+├── templates/          # HTML templates
+└── static/             # Generated poster previews
 ```
 
 ---
 
-Built with too much coffee and too many Skyfield docs tabs open. For stardance program ☕🌌
+## A Small Personal Note
+
+This project ended up being much bigger than I originally expected. I spent a lot of time learning Skyfield, astronomical coordinate systems, poster rendering with Pillow, and putting everything together into a working web application.
+
+If the **Hack Club** team is reading this: thank you for taking the time to check it out. I genuinely learned a lot while building it, ran into plenty of problems, rewrote large parts of the project more than once, and I'm proud of how it turned out.
+
+I hope you enjoy trying it as much as I enjoyed building it.
