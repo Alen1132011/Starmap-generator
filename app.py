@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import math, os, time
+import numpy as np
 from skyfield.api import load
 from skyfield.data import hipparcos
 from PIL import Image, ImageDraw, ImageFont
@@ -186,16 +187,26 @@ def napravi_starmap_pro(podaci):
     oblik = podaci.get('oblik', 'krug')
 
     img = Image.new('RGB', (SIRINA, VISINA), color=bg_boja)
-    maska_neba = Image.new('L', (SIRINA, VISINA), 0)
+
+    # Maska i nebo su ranije bili velicine CIJELOG postera (2400x3400 = ~8.16MP),
+    # a stvarno se crta samo unutar kruga/srca radijusa R. Pravimo ih samo
+    # velicine tog kruga + margina - to prepolovi memoriju ova dva bafera
+    # (RGBA nebo_img je najskuplji, 4 bajta po pikselu).
+    pad = int(R * 0.12) + 40
+    box = 2 * (R + pad)
+    box_left, box_top = cx - R - pad, cy - R - pad
+    lcx, lcy = R + pad, R + pad  # lokalni centar unutar manjeg bafera
+
+    maska_neba = Image.new('L', (box, box), 0)
     draw_maska = ImageDraw.Draw(maska_neba)
-    
+
     if oblik == 'srce':
-        tacke_srca = generisi_tacke_srca(cx, cy, R)
+        tacke_srca = generisi_tacke_srca(lcx, lcy, R)
         draw_maska.polygon(tacke_srca, fill=255)
     else:
-        draw_maska.ellipse([cx-R, cy-R, cx+R, cy+R], fill=255)
+        draw_maska.ellipse([lcx-R, lcy-R, lcx+R, lcy+R], fill=255)
 
-    nebo_img = Image.new('RGBA', (SIRINA, VISINA), (0,0,0,0))
+    nebo_img = Image.new('RGBA', (box, box), (0,0,0,0))
     draw_nebo = ImageDraw.Draw(nebo_img, 'RGBA')
 
     ts = load.timescale()
@@ -221,8 +232,8 @@ def napravi_starmap_pro(podaci):
                 
                 imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
                 if imenilac > 0:
-                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = cy - R * (math.sin(lat_rad)) / imenilac
+                    x = lcx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = lcy - R * (math.sin(lat_rad)) / imenilac
                     tacke_linije.append((x, y))
             if len(tacke_linije) > 1:
                 draw_nebo.line(tacke_linije, fill=grid_col, width=3)
@@ -236,41 +247,57 @@ def napravi_starmap_pro(podaci):
                 
                 imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
                 if imenilac > 0:
-                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = cy - R * (math.sin(lat_rad)) / imenilac
+                    x = lcx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = lcy - R * (math.sin(lat_rad)) / imenilac
                     tacke_linije.append((x, y))
             if len(tacke_linije) > 1:
                 draw_nebo.line(tacke_linije, fill=grid_col, width=3)
     # --- KRAJ REŠETKE ---
 
+    # Pozicije zvijezda - vektorizovano preko numpy-a umjesto pandas iterrows().
+    # iterrows() pravi po jedan Series objekat za SVAKI red (par hiljada zvijezda
+    # na svaki /update poziv) sto je nepotrebno skupo i memorijski i CPU-wise.
+    ra_arr = stars_df['ra_hours'].to_numpy()
+    dec_arr = np.radians(stars_df['dec_degrees'].to_numpy())
+    mag_arr = stars_df['magnitude'].to_numpy()
+    hid_arr = stars_df.index.to_numpy()
+
+    lt = math.radians(lat)
+    ha_arr = np.radians((lst - ra_arr) * 15)
+    sin_alt = math.sin(lt) * np.sin(dec_arr) + math.cos(lt) * np.cos(dec_arr) * np.cos(ha_arr)
+    alt_arr = np.arcsin(np.clip(sin_alt, -1, 1))
+
+    vidljive = alt_arr > 0
+    r_px_arr = R * (1 - np.degrees(alt_arr[vidljive]) / 90)
+    cos_az = (np.sin(dec_arr[vidljive]) - np.sin(alt_arr[vidljive]) * math.sin(lt)) / (np.cos(alt_arr[vidljive]) * math.cos(lt))
+    az_arr = np.arccos(np.clip(cos_az, -1, 1))
+    ha_vid = ha_arr[vidljive]
+    az_arr = np.where(np.sin(ha_vid) > 0, 2 * math.pi - az_arr, az_arr)
+
+    x_arr = lcx + r_px_arr * np.sin(az_arr)
+    y_arr = lcy - r_px_arr * np.cos(az_arr)
+
     pos_map = {}
-    for hid, s in stars_df.iterrows():
-        ha = math.radians((lst - s['ra_hours']) * 15)
-        dec, lt = math.radians(s['dec_degrees']), math.radians(lat)
-        sin_alt = math.sin(lt)*math.sin(dec) + math.cos(lt)*math.cos(dec)*math.cos(ha)
-        alt = math.asin(max(-1, min(1, sin_alt)))
-        
-        if alt > 0:
-            r_px = R * (1 - math.degrees(alt)/90)
-            cos_az = (math.sin(dec)-math.sin(alt)*math.sin(lt))/(math.cos(alt)*math.cos(lt))
-            az = math.acos(max(-1, min(1, cos_az)))
-            if math.sin(ha) > 0: az = 2*math.pi - az
-            
-            x, y = cx+r_px*math.sin(az), cy-r_px*math.cos(az)
-            pos_map[hid] = (x, y)
-            
-            mag = s['magnitude']
-            size = max(2, int((6.8-mag)*2.5))
-            if mag < 1.5:
-                draw_nebo.ellipse([x-size-5, y-size-5, x+size+5, y+size+5], fill=(*zvijezde_boja, 50))
-            draw_nebo.ellipse([x-size, y-size, x+size, y+size], fill=zvijezde_boja)
+    for hid, x, y, mag in zip(hid_arr[vidljive], x_arr, y_arr, mag_arr[vidljive]):
+        pos_map[hid] = (x, y)
+        size = max(2, int((6.8 - mag) * 2.5))
+        if mag < 1.5:
+            draw_nebo.ellipse([x-size-5, y-size-5, x+size+5, y+size+5], fill=(*zvijezde_boja, 50))
+        draw_nebo.ellipse([x-size, y-size, x+size, y+size], fill=zvijezde_boja)
 
     if podaci.get('lines') == 'on':
         for s, e in VEZE_SAZVIJEZDA:
             if s in pos_map and e in pos_map:
                 draw_nebo.line([pos_map[s], pos_map[e]], fill=(*zvijezde_boja, 180), width=4)
 
-    img.paste(nebo_img, (0,0), mask=maska_neba)
+    img.paste(nebo_img, (box_left, box_top), mask=maska_neba)
+
+    # Odmah oslobodi ova dva bafera (nebo_img je RGBA, najskuplji od svih) -
+    # ne cekamo GC, nego ih eksplicitno gasimo cim vise nisu potrebni.
+    del draw_nebo, draw_maska
+    nebo_img.close()
+    maska_neba.close()
+
     draw_main = ImageDraw.Draw(img, 'RGBA')
 
     if oblik == 'srce':
@@ -324,7 +351,8 @@ def napravi_starmap_pro(podaci):
         print(f"Greška prilikom ispisa teksta ili Mjeseca: {e}")
 
     putanja = os.path.join('static', 'preview.png')
-    img.save(putanja, quality=100)
+    img.save(putanja)  # quality= je ionako ignorisan za PNG, uklonjen mrtvi parametar
+    img.close()
     return putanja
 
 
@@ -456,4 +484,4 @@ if __name__ == '__main__':
         db.create_all() # Automatska inicijalizacija baze na startu
      
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)     
+    app.run(host="0.0.0.0", port=port)
