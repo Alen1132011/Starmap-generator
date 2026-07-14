@@ -553,6 +553,7 @@
   const statusText = document.getElementById('status-text');
   let timeout = null;
   let trenutniJezik = 'en';
+  let updateController = null; // otkazuje prethodni /update fetch da se ne prikaže zastarjela slika
 
   const prevodi = {
     bs: {
@@ -708,21 +709,28 @@
  
   function updatePreview(){
     clearTimeout(timeout);
+    if (updateController) updateController.abort(); // prekini prethodni request - nema više "stare" slike koja stigne kasnije
+
     statusPill.classList.add('busy');
     statusText.textContent = prevodi[trenutniJezik]['status-drawing'];
     img.classList.add('loading');
+
     timeout = setTimeout(() => {
+      updateController = new AbortController();
       const formData = new FormData(form);
-      fetch('/update', { method: 'POST', body: formData })
+
+      fetch('/update', { method: 'POST', body: formData, cache: 'no-store', signal: updateController.signal })
         .then(r => r.json())
         .then(data => {
-          img.src = data.image_url;
+          const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+          img.src = freshUrl;
           document.getElementById('download-link').href = data.image_url;
           img.classList.remove('loading');
           statusPill.classList.remove('busy');
           statusText.textContent = prevodi[trenutniJezik]['status-ready'];
         })
-        .catch(() => {
+        .catch(err => {
+          if (err.name === 'AbortError') return; // otkazano jer je krenuo noviji zahtjev - nije greška
           img.classList.remove('loading');
           statusPill.classList.remove('busy');
           statusText.textContent = prevodi[trenutniJezik]['status-error'];
@@ -948,6 +956,6 @@
     ucitajPostereIzBaze();
     updatePreview();
   };  
-</script>
-</body>
-</html>  
+</script>          
+</body>    
+</html>
