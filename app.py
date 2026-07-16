@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import math, os, time
-import numpy as np
 from skyfield.api import load
 from skyfield.data import hipparcos
 from PIL import Image, ImageDraw, ImageFont
@@ -44,7 +43,7 @@ class Poster(db.Model):
     
     podnaslov = db.Column(db.String(150))
     y_sub = db.Column(db.String(10))
-    ls_sub = db.Column(db.String(10))
+    ls_sub = db.Column(db.String(10))                   
     trans_sub = db.Column(db.String(20))
     
     y_info = db.Column(db.String(10))
@@ -177,36 +176,72 @@ def transformisi_tekst(tekst, transform_tip):
     return tekst
 
 def napravi_starmap_pro(podaci):
-    bg_boja = hex_to_rgb(podaci.get('boja_pozadine', '#05070d'))
-    okvir_boja = hex_to_rgb(podaci.get('boja_okvira', '#ffffff'))
-    zvijezde_boja = hex_to_rgb(podaci.get('boja_zvijezda', '#ffffff'))
-    tekst_boja = hex_to_rgb(podaci.get('boja_teksta', '#ffffff'))
+    # Provjeravamo licencu preko Render Environment okruženja
+    STATUS_LICENCE = os.environ.get("VERZIJA_APLIKACIJE", "DEMO")
 
+    # Pokupimo parametre koje je korisnik poslao iz forme
+    raw_bg = podaci.get('boja_pozadine', '#05070d')
+    raw_okvir = podaci.get('boja_okvira', '#ffffff')
+    raw_zvijezda = podaci.get('boja_zvijezda', '#ffffff')
+    raw_tekst = podaci.get('boja_teksta', '#ffffff')
+
+    prikazi_grid = podaci.get('grid') == 'on'
+    prikazi_lines = podaci.get('lines') == 'on'
+    prikazi_okvir = podaci.get('okvir') == 'on'
+    prikazi_mjesec = podaci.get('prikazi_mjesec') == 'on'
+    
+    oblik = podaci.get('oblik', 'krug')
+    
+    # Podrazumijevane dimenzije za Premium verziju
     SIRINA, VISINA = 2400, 3400 
     cx, cy, R = 1200, 1150, 950
-    oblik = podaci.get('oblik', 'krug')
+
+    # --- LOKALNA / OPEN-SOURCE ZAŠTITA (ZAKLJUČAVANJE) ---
+    if STATUS_LICENCE != "PREMIUM_PRODUKCIJA":
+        # 1. Gasimo apsolutno sve opcije sa štrikiranjem (force-off)
+        prikazi_grid = False
+        prikazi_lines = False
+        prikazi_okvir = False
+        prikazi_mjesec = False
+        oblik = 'krug'  # Forsiramo samo obični krug (srce je zaključano)
+
+        # 2. Smanjujemo rezoluciju (tako da je nemoguće odštampati poster)
+        SIRINA, VISINA = 1000, 1416  
+        cx, cy, R = 500, 480, 390
+
+        # 3. Zaključavamo boje na samo 2 šablona (color picker se ignoriše)
+        # Ako detektujemo da su probali staviti bijelu pozadinu, damo im "White" šablon, inače "Classic Navy"
+        is_white_bg = raw_bg.lower() in ['#ffffff', '#fff', 'rgb(255, 255, 255)', 'white']
+        if is_white_bg:
+            # Šablon 2: Minimalist White
+            raw_bg = '#ffffff'
+            raw_okvir = '#111111'
+            raw_zvijezda = '#111111'
+            raw_tekst = '#111111'
+        else:
+            # Šablon 1: Classic Navy
+            raw_bg = '#05070d'
+            raw_okvir = '#ffffff'
+            raw_zvijezda = '#ffffff'
+            raw_tekst = '#ffffff'
+
+    # Pretvaranje u RGB formate nakon što su pravila licence primijenjena
+    bg_boja = hex_to_rgb(raw_bg)
+    okvir_boja = hex_to_rgb(raw_okvir)
+    zvijezde_boja = hex_to_rgb(raw_zvijezda)
+    tekst_boja = hex_to_rgb(raw_tekst)
 
     img = Image.new('RGB', (SIRINA, VISINA), color=bg_boja)
-
-    # Maska i nebo su ranije bili velicine CIJELOG postera (2400x3400 = ~8.16MP),
-    # a stvarno se crta samo unutar kruga/srca radijusa R. Pravimo ih samo
-    # velicine tog kruga + margina - to prepolovi memoriju ova dva bafera
-    # (RGBA nebo_img je najskuplji, 4 bajta po pikselu).
-    pad = int(R * 0.12) + 40
-    box = 2 * (R + pad)
-    box_left, box_top = cx - R - pad, cy - R - pad
-    lcx, lcy = R + pad, R + pad  # lokalni centar unutar manjeg bafera
-
-    maska_neba = Image.new('L', (box, box), 0)
+    maska_neba = Image.new('L', (SIRINA, VISINA), 0)
     draw_maska = ImageDraw.Draw(maska_neba)
-
+    
     if oblik == 'srce':
-        tacke_srca = generisi_tacke_srca(lcx, lcy, R)
+        tacke_srca = generisi_tacke_srca(cx, cy, R)
         draw_maska.polygon(tacke_srca, fill=255)
     else:
-        draw_maska.ellipse([lcx-R, lcy-R, lcx+R, lcy+R], fill=255)
+        draw_maska.ellipse([cx-R, cy-R, cx+R, cy+R], fill=255)
 
-    nebo_img = Image.new('RGBA', (box, box), (0,0,0,0))
+    nebo_img = Image.new('RGBA', (SIRINA, VISINA), (0,0,0,0))
     draw_nebo = ImageDraw.Draw(nebo_img, 'RGBA')
 
     ts = load.timescale()
@@ -219,94 +254,76 @@ def napravi_starmap_pro(podaci):
     t = ts.utc(y, m, d, h, mn)
     lst = (18.697374558 + 24.06570982441908 * (t.ut1 - 2451545.0) + lon / 15.0) % 24
 
-    # --- POBOLJŠANA I ISPRAVLJENA STEREOGRAFSKA REŠETKA (GRID) ---
-    if podaci.get('grid') == 'on':
+    # --- STEREOGRAFSKA REŠETKA (GRID) ---
+    if prikazi_grid:
         grid_col = (*zvijezde_boja, 45)
-        
-        # 1. Paralele (horizontalni lukovi) svako 15 stepeni
         for lat_deg in range(-75, 76, 15):
             tacke_linije = []
             for lon_deg in range(-90, 91, 2):
                 lon_rad = math.radians(lon_deg)
                 lat_rad = math.radians(lat_deg)
-                
                 imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
                 if imenilac > 0:
-                    x = lcx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = lcy - R * (math.sin(lat_rad)) / imenilac
+                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = cy - R * (math.sin(lat_rad)) / imenilac
                     tacke_linije.append((x, y))
             if len(tacke_linije) > 1:
                 draw_nebo.line(tacke_linije, fill=grid_col, width=3)
                 
-        # 2. Meridijani (vertikalni lukovi) svako 15 stepeni
         for lon_deg in range(-75, 76, 15):
             tacke_linije = []
             for lat_deg in range(-90, 91, 2):
                 lon_rad = math.radians(lon_deg)
                 lat_rad = math.radians(lat_deg)
-                
                 imenilac = 1 + math.cos(lat_rad) * math.cos(lon_rad)
                 if imenilac > 0:
-                    x = lcx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
-                    y = lcy - R * (math.sin(lat_rad)) / imenilac
+                    x = cx + R * (math.cos(lat_rad) * math.sin(lon_rad)) / imenilac
+                    y = cy - R * (math.sin(lat_rad)) / imenilac
                     tacke_linije.append((x, y))
             if len(tacke_linije) > 1:
                 draw_nebo.line(tacke_linije, fill=grid_col, width=3)
-    # --- KRAJ REŠETKE ---
 
-    # Pozicije zvijezda - vektorizovano preko numpy-a umjesto pandas iterrows().
-    # iterrows() pravi po jedan Series objekat za SVAKI red (par hiljada zvijezda
-    # na svaki /update poziv) sto je nepotrebno skupo i memorijski i CPU-wise.
-    ra_arr = stars_df['ra_hours'].to_numpy()
-    dec_arr = np.radians(stars_df['dec_degrees'].to_numpy())
-    mag_arr = stars_df['magnitude'].to_numpy()
-    hid_arr = stars_df.index.to_numpy()
-
-    lt = math.radians(lat)
-    ha_arr = np.radians((lst - ra_arr) * 15)
-    sin_alt = math.sin(lt) * np.sin(dec_arr) + math.cos(lt) * np.cos(dec_arr) * np.cos(ha_arr)
-    alt_arr = np.arcsin(np.clip(sin_alt, -1, 1))
-
-    vidljive = alt_arr > 0
-    r_px_arr = R * (1 - np.degrees(alt_arr[vidljive]) / 90)
-    cos_az = (np.sin(dec_arr[vidljive]) - np.sin(alt_arr[vidljive]) * math.sin(lt)) / (np.cos(alt_arr[vidljive]) * math.cos(lt))
-    az_arr = np.arccos(np.clip(cos_az, -1, 1))
-    ha_vid = ha_arr[vidljive]
-    az_arr = np.where(np.sin(ha_vid) > 0, 2 * math.pi - az_arr, az_arr)
-
-    x_arr = lcx + r_px_arr * np.sin(az_arr)
-    y_arr = lcy - r_px_arr * np.cos(az_arr)
-
+    # --- CRTANJE ZVIJEZDA ---
     pos_map = {}
-    for hid, x, y, mag in zip(hid_arr[vidljive], x_arr, y_arr, mag_arr[vidljive]):
-        pos_map[hid] = (x, y)
-        size = max(2, int((6.8 - mag) * 2.5))
-        if mag < 1.5:
-            draw_nebo.ellipse([x-size-5, y-size-5, x+size+5, y+size+5], fill=(*zvijezde_boja, 50))
-        draw_nebo.ellipse([x-size, y-size, x+size, y+size], fill=zvijezde_boja)
+    for hid, s in stars_df.iterrows():
+        ha = math.radians((lst - s['ra_hours']) * 15)
+        dec, lt = math.radians(s['dec_degrees']), math.radians(lat)
+        sin_alt = math.sin(lt)*math.sin(dec) + math.cos(lt)*math.cos(dec)*math.cos(ha)
+        alt = math.asin(max(-1, min(1, sin_alt)))
+        
+        if alt > 0:
+            r_px = R * (1 - math.degrees(alt)/90)
+            cos_az = (math.sin(dec)-math.sin(alt)*math.sin(lt))/(math.cos(alt)*math.cos(lt))
+            az = math.acos(max(-1, min(1, cos_az)))
+            if math.sin(ha) > 0: az = 2*math.pi - az
+            
+            x, y = cx+r_px*math.sin(az), cy-r_px*math.cos(az)
+            pos_map[hid] = (x, y)
+            
+            mag = s['magnitude']
+            size = max(2, int((6.8-mag)*2.5))
+            if mag < 1.5:
+                draw_nebo.ellipse([x-size-5, y-size-5, x+size+5, y+size+5], fill=(*zvijezde_boja, 50))
+            draw_nebo.ellipse([x-size, y-size, x+size, y+size], fill=zvijezde_boja)
 
-    if podaci.get('lines') == 'on':
+    # --- LINIJE SAZVIJEŽĐA ---
+    if prikazi_lines:
         for s, e in VEZE_SAZVIJEZDA:
             if s in pos_map and e in pos_map:
                 draw_nebo.line([pos_map[s], pos_map[e]], fill=(*zvijezde_boja, 180), width=4)
 
-    img.paste(nebo_img, (box_left, box_top), mask=maska_neba)
-
-    # Odmah oslobodi ova dva bafera (nebo_img je RGBA, najskuplji od svih) -
-    # ne cekamo GC, nego ih eksplicitno gasimo cim vise nisu potrebni.
-    del draw_nebo, draw_maska
-    nebo_img.close()
-    maska_neba.close()
-
+    img.paste(nebo_img, (0,0), mask=maska_neba)
     draw_main = ImageDraw.Draw(img, 'RGBA')
 
+    # Unutrašnji okvir oko mape (srce ili krug)
     if oblik == 'srce':
         tacke_srca = generisi_tacke_srca(cx, cy, R)
-        draw_main.polygon(tacke_srca, outline=okvir_boja, width=18)
+        draw_main.polygon(tacke_srca, outline=okvir_boja, width=18 if STATUS_LICENCE == "PREMIUM_PRODUKCIJA" else 8)
     else:
-        draw_main.ellipse([cx-R, cy-R, cx+R, cy+R], outline=okvir_boja, width=18)
+        draw_main.ellipse([cx-R, cy-R, cx+R, cy+R], outline=okvir_boja, width=18 if STATUS_LICENCE == "PREMIUM_PRODUKCIJA" else 8)
 
-    if podaci.get('okvir') == 'on':
+    # --- VANJSKI UKRASNI OKVIR ---
+    if prikazi_okvir:
         draw_main.rectangle([70, 70, SIRINA-70, VISINA-70], outline=okvir_boja, width=12)
         draw_main.rectangle([100, 100, SIRINA-100, VISINA-100], outline=okvir_boja, width=4)
 
@@ -314,13 +331,26 @@ def napravi_starmap_pro(podaci):
     font_path = os.path.join(FONTS_DIR, odabrani_font) if odabrani_font != 'arial.ttf' else 'arial.ttf'
 
     try:
-        f_main = ImageFont.truetype(font_path, 140)
-        f_sub = ImageFont.truetype(font_path, 70)
-        f_info = ImageFont.truetype(font_path, 52)
-        
-        y_main = int(podaci.get('y_main', 2450))
-        y_sub = int(podaci.get('y_sub', 2650))
-        y_info = int(podaci.get('y_info', 2950))
+        # Dinamičko prilagođavanje veličine fonta i pozicije u zavisnosti od rezolucije (Premium vs Demo)
+        if STATUS_LICENCE == "PREMIUM_PRODUKCIJA":
+            f_main = ImageFont.truetype(font_path, 140)
+            f_sub = ImageFont.truetype(font_path, 70)
+            f_info = ImageFont.truetype(font_path, 52)
+            
+            y_main = int(podaci.get('y_main', 2450))
+            y_sub = int(podaci.get('y_sub', 2650))
+            y_info = int(podaci.get('y_info', 2950))
+            y_razmak = 85
+        else:
+            # Smanjene veličine fontova za demo sliku niske rezolucije
+            f_main = ImageFont.truetype(font_path, 60)
+            f_sub = ImageFont.truetype(font_path, 30)
+            f_info = ImageFont.truetype(font_path, 22)
+            
+            y_main = 1020
+            y_sub = 1110
+            y_info = 1230
+            y_razmak = 35
 
         ls_main = int(podaci.get('ls_main', 0))
         ls_sub = int(podaci.get('ls_sub', 0))
@@ -340,19 +370,20 @@ def napravi_starmap_pro(podaci):
         draw_text_spaced(draw_main, (cx, y_sub), t_sub, f_sub, tekst_boja, spacing=ls_sub, anchor="mm")
         
         draw_text_spaced(draw_main, (cx, y_info), t_lok, f_info, tekst_boja, spacing=ls_info, anchor="mm")
-        draw_text_spaced(draw_main, (cx, y_info + 85), t_dat, f_info, tekst_boja, spacing=ls_info, anchor="mm")
-        draw_text_spaced(draw_main, (cx, y_info + 170), t_koor, f_info, tekst_boja, spacing=ls_info, anchor="mm")
+        draw_text_spaced(draw_main, (cx, y_info + y_razmak), t_dat, f_info, tekst_boja, spacing=ls_info, anchor="mm")
+        draw_text_spaced(draw_main, (cx, y_info + (y_razmak * 2)), t_koor, f_info, tekst_boja, spacing=ls_info, anchor="mm")
 
-        if podaci.get('prikazi_mjesec') == 'on':
+        # --- CRTANJE MJESECA (Samo ako je dozvoljeno) ---
+        if prikazi_mjesec:
             osvijetljenost, smer = izracunaj_fazu_mjeseca(t)
-            nacrtaj_mjesec(draw_main, cx + 500, y_info + 85, 75, osvijetljenost, smer, okvir_boja, bg_boja)
+            # Na demo verziji je onemogućeno pa se ovaj dio neće izvršiti
+            nacrtaj_mjesec(draw_main, cx + 500, y_info + y_razmak, 75, osvijetljenost, smer, okvir_boja, bg_boja)
 
     except Exception as e:
-        print(f"Greška prilikom ispisa teksta ili Mjeseca: {e}")
+        print(f"Greška prilikom ispisa teksta: {e}")
 
     putanja = os.path.join('static', 'preview.png')
-    img.save(putanja)  # quality= je ionako ignorisan za PNG, uklonjen mrtvi parametar
-    img.close()
+    img.save(putanja, quality=100)
     return putanja
 
 
@@ -484,4 +515,4 @@ if __name__ == '__main__':
         db.create_all() # Automatska inicijalizacija baze na startu
      
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)     
