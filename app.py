@@ -179,7 +179,7 @@ def napravi_starmap_pro(podaci):
     # Provjeravamo licencu preko Render Environment okruženja
     STATUS_LICENCE = os.environ.get("VERZIJA_APLIKACIJE", "DEMO")
 
-    # Pokupimo parametre koje je korisnik poslao iz forme
+    # Pokupimo originalne vrijednosti iz forme
     raw_bg = podaci.get('boja_pozadine', '#05070d')
     raw_okvir = podaci.get('boja_okvira', '#ffffff')
     raw_zvijezda = podaci.get('boja_zvijezda', '#ffffff')
@@ -189,43 +189,43 @@ def napravi_starmap_pro(podaci):
     prikazi_lines = podaci.get('lines') == 'on'
     prikazi_okvir = podaci.get('okvir') == 'on'
     prikazi_mjesec = podaci.get('prikazi_mjesec') == 'on'
-    
     oblik = podaci.get('oblik', 'krug')
-    
-    # Podrazumijevane dimenzije za Premium verziju
+
+    # UVIJEK koristimo punu rezoluciju visoke kvalitete za štampu (2400x3400)
     SIRINA, VISINA = 2400, 3400 
     cx, cy, R = 1200, 1150, 950
 
     # --- LOKALNA / OPEN-SOURCE ZAŠTITA (ZAKLJUČAVANJE) ---
     if STATUS_LICENCE != "PREMIUM_PRODUKCIJA":
-        # 1. Gasimo apsolutno sve opcije sa štrikiranjem (force-off)
+        # 1. Isključujemo sve opcije sa štrikiranjem (force-off) i zaključavamo na krug
         prikazi_grid = False
         prikazi_lines = False
         prikazi_okvir = False
         prikazi_mjesec = False
-        oblik = 'krug'  # Forsiramo samo obični krug (srce je zaključano)
+        oblik = 'krug'
 
-        # 2. Smanjujemo rezoluciju (tako da je nemoguće odštampati poster)
-        SIRINA, VISINA = 1000, 1416  
-        cx, cy, R = 500, 480, 390
-
-        # 3. Zaključavamo boje na samo 2 šablona (color picker se ignoriše)
-        # Ako detektujemo da su probali staviti bijelu pozadinu, damo im "White" šablon, inače "Classic Navy"
-        is_white_bg = raw_bg.lower() in ['#ffffff', '#fff', 'rgb(255, 255, 255)', 'white']
-        if is_white_bg:
-            # Šablon 2: Minimalist White
+        # 2. Ignorišemo nasumične boje i zaključavamo isključivo na naša 3 predefinisana šablona (presets)
+        bg_lower = raw_bg.lower()
+        if bg_lower in ['#ffffff', '#fff', 'rgb(255, 255, 255)', 'white']:
+            # Šablon 1: Minimalist White
             raw_bg = '#ffffff'
-            raw_okvir = '#111111'
-            raw_zvijezda = '#111111'
-            raw_tekst = '#111111'
+            raw_okvir = '#000000'
+            raw_zvijezda = '#000000'
+            raw_tekst = '#000000'
+        elif bg_lower in ['#000000', '#000', 'rgb(0, 0, 0)', 'black']:
+            # Šablon 2: Midnight Black
+            raw_bg = '#000000'
+            raw_okvir = '#ffffff'
+            raw_zvijezda = '#ffffff'
+            raw_tekst = '#ffffff'
         else:
-            # Šablon 1: Classic Navy
+            # Šablon 3 (Default): Classic Navy
             raw_bg = '#05070d'
             raw_okvir = '#ffffff'
             raw_zvijezda = '#ffffff'
             raw_tekst = '#ffffff'
 
-    # Pretvaranje u RGB formate nakon što su pravila licence primijenjena
+    # Pretvaranje u RGB formate nakon primjene zaštite/šablona
     bg_boja = hex_to_rgb(raw_bg)
     okvir_boja = hex_to_rgb(raw_okvir)
     zvijezde_boja = hex_to_rgb(raw_zvijezda)
@@ -315,14 +315,13 @@ def napravi_starmap_pro(podaci):
     img.paste(nebo_img, (0,0), mask=maska_neba)
     draw_main = ImageDraw.Draw(img, 'RGBA')
 
-    # Unutrašnji okvir oko mape (srce ili krug)
     if oblik == 'srce':
         tacke_srca = generisi_tacke_srca(cx, cy, R)
-        draw_main.polygon(tacke_srca, outline=okvir_boja, width=18 if STATUS_LICENCE == "PREMIUM_PRODUKCIJA" else 8)
+        draw_main.polygon(tacke_srca, outline=okvir_boja, width=18)
     else:
-        draw_main.ellipse([cx-R, cy-R, cx+R, cy+R], outline=okvir_boja, width=18 if STATUS_LICENCE == "PREMIUM_PRODUKCIJA" else 8)
+        draw_main.ellipse([cx-R, cy-R, cx+R, cy+R], outline=okvir_boja, width=18)
 
-    # --- VANJSKI UKRASNI OKVIR ---
+    # --- VANJSKI OKVIR ---
     if prikazi_okvir:
         draw_main.rectangle([70, 70, SIRINA-70, VISINA-70], outline=okvir_boja, width=12)
         draw_main.rectangle([100, 100, SIRINA-100, VISINA-100], outline=okvir_boja, width=4)
@@ -331,26 +330,13 @@ def napravi_starmap_pro(podaci):
     font_path = os.path.join(FONTS_DIR, odabrani_font) if odabrani_font != 'arial.ttf' else 'arial.ttf'
 
     try:
-        # Dinamičko prilagođavanje veličine fonta i pozicije u zavisnosti od rezolucije (Premium vs Demo)
-        if STATUS_LICENCE == "PREMIUM_PRODUKCIJA":
-            f_main = ImageFont.truetype(font_path, 140)
-            f_sub = ImageFont.truetype(font_path, 70)
-            f_info = ImageFont.truetype(font_path, 52)
-            
-            y_main = int(podaci.get('y_main', 2450))
-            y_sub = int(podaci.get('y_sub', 2650))
-            y_info = int(podaci.get('y_info', 2950))
-            y_razmak = 85
-        else:
-            # Smanjene veličine fontova za demo sliku niske rezolucije
-            f_main = ImageFont.truetype(font_path, 60)
-            f_sub = ImageFont.truetype(font_path, 30)
-            f_info = ImageFont.truetype(font_path, 22)
-            
-            y_main = 1020
-            y_sub = 1110
-            y_info = 1230
-            y_razmak = 35
+        f_main = ImageFont.truetype(font_path, 140)
+        f_sub = ImageFont.truetype(font_path, 70)
+        f_info = ImageFont.truetype(font_path, 52)
+        
+        y_main = int(podaci.get('y_main', 2450))
+        y_sub = int(podaci.get('y_sub', 2650))
+        y_info = int(podaci.get('y_info', 2950))
 
         ls_main = int(podaci.get('ls_main', 0))
         ls_sub = int(podaci.get('ls_sub', 0))
@@ -370,21 +356,20 @@ def napravi_starmap_pro(podaci):
         draw_text_spaced(draw_main, (cx, y_sub), t_sub, f_sub, tekst_boja, spacing=ls_sub, anchor="mm")
         
         draw_text_spaced(draw_main, (cx, y_info), t_lok, f_info, tekst_boja, spacing=ls_info, anchor="mm")
-        draw_text_spaced(draw_main, (cx, y_info + y_razmak), t_dat, f_info, tekst_boja, spacing=ls_info, anchor="mm")
-        draw_text_spaced(draw_main, (cx, y_info + (y_razmak * 2)), t_koor, f_info, tekst_boja, spacing=ls_info, anchor="mm")
+        draw_text_spaced(draw_main, (cx, y_info + 85), t_dat, f_info, tekst_boja, spacing=ls_info, anchor="mm")
+        draw_text_spaced(draw_main, (cx, y_info + 170), t_koor, f_info, tekst_boja, spacing=ls_info, anchor="mm")
 
-        # --- CRTANJE MJESECA (Samo ako je dozvoljeno) ---
+        # --- CRTANJE MJESECA ---
         if prikazi_mjesec:
             osvijetljenost, smer = izracunaj_fazu_mjeseca(t)
-            # Na demo verziji je onemogućeno pa se ovaj dio neće izvršiti
-            nacrtaj_mjesec(draw_main, cx + 500, y_info + y_razmak, 75, osvijetljenost, smer, okvir_boja, bg_boja)
+            nacrtaj_mjesec(draw_main, cx + 500, y_info + 85, 75, osvijetljenost, smer, okvir_boja, bg_boja)
 
     except Exception as e:
-        print(f"Greška prilikom ispisa teksta: {e}")
+        print(f"Greška prilikom ispisa teksta ili Mjeseca: {e}")
 
     putanja = os.path.join('static', 'preview.png')
     img.save(putanja, quality=100)
-    return putanja
+    return putanja if 'putanja' in locals() else putanja
 
 
 # --- RUTE ZA AUTENTIFIKACIJU I ČUVANJE RADOVA ---
