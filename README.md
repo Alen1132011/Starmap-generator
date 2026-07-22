@@ -190,6 +190,9 @@ Starmap-generator/
 
 Here are a few example posters created with the generator.
 
+<img width="2400" height="3400" alt="preview (1)" src="https://github.com/user-attachments/assets/7533eec4-4779-452d-be1c-420e0ecefc58" />
+<img width="2400" height="3400" alt="preview" src="https://github.com/user-attachments/assets/f149865d-2a05-4adb-8737-5c02a0002ed1" />
+
 ---
 
 # A Small Personal Note
