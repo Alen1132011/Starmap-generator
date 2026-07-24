@@ -15,7 +15,7 @@ Built with Flask, Skyfield for the astronomical calculations, and Pillow for the
 
 The application is currently available on two live web hosting services:
 
-1. **[starmap.alen.hackclub.app](https://alen.hackclub.app/)** *(Official Hack Club Nest — Recommended)*
+1. **[starmap.alen.hackclub.app](https://starmap.alen.hackclub.app/)** *(Official Hack Club Nest — Recommended)*
    - Powered by a persistent Linux container on Hack Club Nest.
    - **Instant access (0s cold start)** with permanent storage and unlimited execution time for high-resolution renderings.
 
