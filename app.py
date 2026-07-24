@@ -324,7 +324,7 @@ def napravi_starmap_pro(podaci):
         draw_main.rectangle([100, 100, SIRINA-100, VISINA-100], outline=okvir_boja, width=4)
 
     odabrani_font = podaci.get('font_choice', 'arial.ttf')
-    font_path = os.path.join(FONTS_DIR, odabrani_font) if odabrani_font != 'arial.ttf' else 'arial.ttf'
+    font_path = os.path.join(FONTS_DIR, odabrani_font) if odabrani_font != 'Montserrat-Regular.ttf' else 'arial.ttf'
 
     try:
         f_main = ImageFont.truetype(font_path, 140)
