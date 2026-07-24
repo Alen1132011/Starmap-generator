@@ -22,7 +22,6 @@ FONTS_DIR = 'fonts'
 if not os.path.exists(FONTS_DIR): os.makedirs(FONTS_DIR)
 if not os.path.exists('static'): os.makedirs('static')
 
-# --- MODELI ZA BAZU PODATAKA ---
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,7 +74,6 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# --- MATEMATIKA, FIZIKA I PIL CRTANJE ---
 
 VEZE_SAZVIJEZDA = [
     (53910, 58001), (58001, 59774), (59774, 62956), (62956, 65378), (65378, 67301), (67301, 65477), (65477, 62956),
@@ -195,7 +193,7 @@ def napravi_starmap_pro(podaci):
     SIRINA, VISINA = 2400, 3400 
     cx, cy, R = 1200, 1150, 950
 
-    # --- LOKALNA / OPEN-SOURCE ZAŠTITA (ZAKLJUČAVANJE) ---
+    
     if STATUS_LICENCE != "PREMIUM_PRODUKCIJA":
         # 1. Isključujemo sve opcije sa štrikiranjem (force-off) i zaključavamo na krug
         prikazi_grid = False
@@ -254,7 +252,6 @@ def napravi_starmap_pro(podaci):
     t = ts.utc(y, m, d, h, mn)
     lst = (18.697374558 + 24.06570982441908 * (t.ut1 - 2451545.0) + lon / 15.0) % 24
 
-    # --- STEREOGRAFSKA REŠETKA (GRID) ---
     if prikazi_grid:
         grid_col = (*zvijezde_boja, 45)
         for lat_deg in range(-75, 76, 15):
@@ -283,7 +280,7 @@ def napravi_starmap_pro(podaci):
             if len(tacke_linije) > 1:
                 draw_nebo.line(tacke_linije, fill=grid_col, width=3)
 
-    # --- CRTANJE ZVIJEZDA ---
+   
     pos_map = {}
     for hid, s in stars_df.iterrows():
         ha = math.radians((lst - s['ra_hours']) * 15)
@@ -306,7 +303,7 @@ def napravi_starmap_pro(podaci):
                 draw_nebo.ellipse([x-size-5, y-size-5, x+size+5, y+size+5], fill=(*zvijezde_boja, 50))
             draw_nebo.ellipse([x-size, y-size, x+size, y+size], fill=zvijezde_boja)
 
-    # --- LINIJE SAZVIJEŽĐA ---
+   
     if prikazi_lines:
         for s, e in VEZE_SAZVIJEZDA:
             if s in pos_map and e in pos_map:
@@ -372,7 +369,7 @@ def napravi_starmap_pro(podaci):
     return putanja if 'putanja' in locals() else putanja
 
 
-# --- RUTE ZA AUTENTIFIKACIJU I ČUVANJE RADOVA ---
+
 
 @app.route('/')
 def index():
@@ -500,4 +497,4 @@ if __name__ == '__main__':
         db.create_all() # Automatska inicijalizacija baze na startu
      
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)     
+    app.run(host="0.0.0.0", port=port)                                              
