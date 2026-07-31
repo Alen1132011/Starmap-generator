@@ -1,208 +1,162 @@
 # Starmap Generator
 
-A web app that generates personalized astronomical posters — enter a date, time, and location, and it draws the exact star positions for that moment, packaged into a print-ready poster.
+Starmap Generator is a Flask web application that creates printable star map posters based on a specific date, time, and location.
 
-Built with Flask, Skyfield for the astronomical calculations, and Pillow for the actual drawing.
+The application uses Skyfield to calculate the positions of stars and Pillow to render the final poster image. It started as a small learning project and gradually grew into a much larger application.
 
-> **Before you start**
->
-> - If the text doesn't appear on the poster immediately, **that's completely normal**. Fill in **all required fields** (date, time, location, coordinates, etc.). The poster is generated only after enough information is provided.
-> - If the text is still missing after filling everything in, **try selecting a different font**. Some fonts may not support every character or may fail to load depending on your system.
+## Live Demo
 
----
+**Hack Club Nest (recommended)**
+https://starmap.alen.hackclub.app/
 
-## Live Demos
+**Render (backup)**
+https://starmap-generator.onrender.com/
 
-The application is currently available on two live web hosting services:
-
-1. **[starmap.alen.hackclub.app](https://starmap.alen.hackclub.app/)** *(Official Hack Club Nest — Recommended)*
-   - Powered by a persistent Linux container on Hack Club Nest.
-   - **Instant access (0s cold start)** with permanent storage and unlimited execution time for high-resolution renderings.
-
-2. **[starmap-generator.onrender.com](https://starmap-generator.onrender.com/)** *(Secondary Demo)*
-   - Hosted on Render's free tier.
-   - *May take 30–50 seconds to wake up if inactive.*
-
----
-
-## Local Version vs. Online Version (Important Note)
-
-The main focus of this project was on developing a high-quality, stable, and secure web application ready for production. Because of this, certain differences exist between running the app locally and using the online versions:
-
-- **Local Version (Lite / Demo Mode):**
-  To protect the unique design and optimize the code for evaluation, the local version runs in a secure mode. In this mode, advanced toggle options (grid, constellation lines, moon phase, decorative border) are disabled, and custom color selection via the color picker is restricted.
-
-  Instead, the application automatically applies **3 predefined official templates (Classic Navy, Midnight Black, and Minimalist White)** in full print-ready resolution (2400×3400).
-
-- **Online Versions (Full Premium):**
-  If you want to try absolutely all features without any restrictions—including custom color picking, heart shape, moon phases, celestial grid, constellation lines, and decorative borders—visit one of the live versions:
-
-  - **https://alen.hackclub.app/**
-  - **https://starmap-generator.onrender.com/**
-
----
+The Render version may take around 30–50 seconds to start if it has been inactive.
 
 ## Features
 
-- Generates a sky map based on the date, time, and geographic coordinates (latitude/longitude)
-- Uses the Hipparcos star catalog (down to magnitude 6.5) for an accurate star field
-- Draws constellation lines connecting recognizable star patterns *(Online/Premium only)*
-- Shows the Moon phase for the selected date, calculated astronomically *(Online/Premium only)*
-- Optional celestial grid overlay *(Online/Premium only)*
-- Two poster shapes: **Circle** or **Heart** *(Heart is Online/Premium only)*
-- Customizable text (title, subtitle, location, date):
-  - Font
-  - Size
-  - Letter spacing
-  - Uppercase / lowercase
-- Three official color presets for local use
-- Fully customizable colors online (background, border, stars, text)
-- Account system (register/login) so users can save and manage posters
+* Generate a star map for any date and location
+* Uses the Hipparcos star catalog (stars down to magnitude 6.5)
+* High-resolution poster rendering (2400×3400)
+* Custom title, subtitle, location, and date
+* Multiple fonts and adjustable text spacing
+* Circle and heart poster layouts
+* User accounts for saving posters
+* Moon phase, constellation lines, and celestial grid (online version)
 
----
+## Local Version
+
+The source code in this repository runs in a limited mode.
+
+Some customization features are disabled in the public version, including:
+
+* custom color picker
+* moon phase
+* constellation lines
+* celestial grid
+* decorative border
+* heart layout
+
+Instead, the local version includes three built-in color themes.
+
+The live demo contains the complete version of the application.
 
 ## Requirements
 
-- Python **3.10+**
-- pip
-- A few hundred MB of free disk space
+* Python 3.10 or newer
+* pip
 
-On the first run Skyfield automatically downloads:
+During the first launch Skyfield downloads the required astronomy data automatically.
 
-- `de421.bsp`
-- Hipparcos star catalog
+## Installation
 
----
-
-# Local Installation
-
-## 1. Clone the repository
+Clone the repository:
 
 ```bash
 git clone https://github.com/Alen1132011/Starmap-generator.git
 cd Starmap-generator
 ```
 
-## 2. Create a virtual environment (recommended)
+Create a virtual environment:
 
 ```bash
 python -m venv venv
 ```
 
-Activate it:
+Activate it.
 
-### Linux / macOS
+Linux/macOS:
 
 ```bash
 source venv/bin/activate
 ```
 
-### Windows (Command Prompt)
+Windows (Command Prompt):
 
 ```cmd
 venv\Scripts\activate.bat
 ```
 
-### Windows (PowerShell)
+Windows (PowerShell):
 
 ```powershell
 venv\Scripts\Activate.ps1
 ```
 
----
-
-## 3. Install dependencies
+Install the dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 4. Run the application
+Run the application:
 
 ```bash
 python app.py
 ```
 
-On first startup the application automatically:
-
-- Creates `starmap.db`
-- Creates the `fonts/` folder (if missing)
-- Creates the `static/` folder (if missing)
-- Downloads:
-  - Hipparcos catalog
-  - `de421.bsp`
-
-*(Only happens once.)*
-
----
-
-## 5. Open your browser
+Open your browser and go to:
 
 ```
 http://127.0.0.1:5000
 ```
 
----
+On the first run the application will automatically:
 
-# Fonts
+* create the SQLite database
+* create missing folders
+* download the Hipparcos catalog
+* download the `de421.bsp` ephemeris
 
-Want to use your own fonts?
+This only happens once.
 
-Simply place any `.ttf` or `.otf` file into the `fonts/` folder.
+## Fonts
 
-The application automatically scans the folder and adds new fonts to the font selector on the next startup.
+To add your own fonts, place `.ttf` or `.otf` files inside the `fonts` folder.
 
----
+They will appear in the font selector after restarting the application.
 
-# Notes
+## Deployment
 
-If you deploy this yourself, consider:
+If you deploy the application yourself, you should:
 
-- Disabling Flask debug mode
-- Using a secure `SECRET_KEY`
-- Replacing SQLite with PostgreSQL (or another production database)
-- Setting the environment variable:
+* disable Flask debug mode
+* use a secure `SECRET_KEY`
+* use PostgreSQL (or another production database) instead of SQLite
+* set
 
 ```text
 VERZIJA_APLIKACIJE=PREMIUM_PRODUKCIJA
 ```
 
-to unlock the full feature set.
+to enable the full feature set.
 
----
-
-# Project Structure
+## Project Structure
 
 ```text
 Starmap-generator/
-├── app.py              # Flask backend, astronomy calculations and rendering
-├── requirements.txt    # Python dependencies
-├── fonts/              # Custom fonts (.ttf/.otf)
-├── templates/          # HTML templates
-└── static/             # Generated poster previews
+├── app.py
+├── requirements.txt
+├── fonts/
+├── templates/
+└── static/
 ```
 
----
+## Gallery
 
-# Gallery
+Example posters created with the generator.
 
-Here are a few example posters created with the generator.
+<img width="2400" height="3400" alt="Poster example 1" src="https://github.com/user-attachments/assets/7533eec4-4779-452d-be1c-420e0ecefc58" />
 
-<img width="2400" height="3400" alt="preview (1)" src="https://github.com/user-attachments/assets/7533eec4-4779-452d-be1c-420e0ecefc58" />
-<img width="2400" height="3400" alt="preview" src="https://github.com/user-attachments/assets/f149865d-2a05-4adb-8737-5c02a0002ed1" />
+<img width="2400" height="3400" alt="Poster example 2" src="https://github.com/user-attachments/assets/f149865d-2a05-4adb-8737-5c02a0002ed1" />
 
----
+## About
 
-# A Small Personal Note
+I started this project because I wanted to learn more about astronomical calculations and image generation in Python.
 
-This project ended up being much bigger than I originally expected.
+At first I expected it to be a relatively small Flask project, but it quickly became much more complex than I had planned. While building it I learned how to work with Skyfield, generate high-resolution images with Pillow, and organize a larger Flask application.
 
-I spent a lot of time learning **Skyfield**, astronomical coordinate systems, poster rendering with **Pillow**, and putting everything together into a complete web application.
+There were plenty of bugs, rewrites, and things I had to learn along the way, but that's also what made the project enjoyable to build.
 
-If the **Hack Club** team is reading this: thank you for taking the time to check it out—and for providing the **Hack Club Nest** infrastructure that keeps the application running 24/7.
-
-Building this project taught me a tremendous amount. I encountered many challenges, rewrote large parts of the code several times, and learned a lot throughout the process.
-
-I'm proud of the final result, and I hope you enjoy using it as much as I enjoyed building it.
+Thanks to Hack Club for providing Nest hosting for the live demo.
