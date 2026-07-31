@@ -113,7 +113,7 @@ This only happens once.
 
 ## Fonts
 
-To add your own fonts, place `.ttf` or `.otf` files inside the `fonts` folder.
+To add your own fonts, place .ttf or .otf` files inside the fonts folder.
 
 They will appear in the font selector after restarting the application.
 
@@ -122,15 +122,9 @@ They will appear in the font selector after restarting the application.
 If you deploy the application yourself, you should:
 
 * disable Flask debug mode
-* use a secure `SECRET_KEY`
 * use PostgreSQL (or another production database) instead of SQLite
-* set
 
-```text
-VERZIJA_APLIKACIJE=PREMIUM_PRODUKCIJA
-```
 
-to enable the full feature set.
 
 ## Project Structure
 
