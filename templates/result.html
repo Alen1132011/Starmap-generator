@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Vaš Poster je Spreman</title>
+    <title>Your Poster is Ready</title>
     <style>
         body { background: #05070f; color: white; text-align: center; font-family: sans-serif; padding: 40px; }
         img { border: 8px solid white; border-radius: 10px; box-shadow: 0 0 50px rgba(255,255,255,0.1); margin-bottom: 30px; }
@@ -12,11 +12,11 @@
     </style>
 </head>
 <body>
-    <h1>🌟 Vaš Poster je Spreman!</h1>
+    <h1>🌟 Your Poster is Ready!</h1>
     <img src="/{{ image_path }}?v={{ range(1, 999) | random }}" width="500">
     <div class="btn-group">
         <a href="/{{ image_path }}" download class="btn download">⬇️ DOWNLOAD (Full HD)</a>
-        <a href="/" class="btn back">🔙 NAZAD NA IZMJENE</a>
+        <a href="/" class="btn back">🔙 BACK TO EDITS</a>
     </div>
 </body>
 </html>    

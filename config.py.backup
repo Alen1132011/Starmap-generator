@@ -1,0 +1,47 @@
+utf-8utf-8
+import os
+
+
+class Config:
+
+    SECRET_KEY = os.environ.get(
+        "SECRET_KEY",
+        "change-this-secret-key"
+    )
+
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL",
+        "sqlite:///starmap.db"
+    )
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True
+    }
+
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_DURATION = 60 * 60 * 24 * 30
+
+    UPLOAD_FOLDER = "static/uploads"
+
+    GOOGLE_CLIENT_ID = os.environ.get("505156428447-sjvksrrbv9agcrc3lpudfoittkrsjg0h.apps.googleusercontent.com", "")
+    GOOGLE_CLIENT_SECRET = os.environ.get("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 ", "")
+
+
+class DevelopmentConfig(Config):
+
+    DEBUG = True
+
+
+class ProductionConfig(Config):
+
+    DEBUG = False
+
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
