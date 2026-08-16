@@ -577,7 +577,7 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
 
     font_name = podaci.get(
         "font_choice",
-        "arial.ttf"
+        "Standard.ttf"
     )
 
 
