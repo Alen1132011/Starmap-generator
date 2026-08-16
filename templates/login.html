@@ -146,6 +146,7 @@
   </div>
 
 <script>
+  // ?mode=register opens the page directly in "create account" view
   let mode = new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login';
 
   function setMode(next){
@@ -185,7 +186,7 @@
     if(mode === 'register'){
       const firstName = document.getElementById('first_name').value.trim();
       if(!firstName || !identifier || !password){
-        errorLine.textContent = 'Ime, email i lozinka su obavezni.';
+        errorLine.textContent = 'First name, email, and password are required.';
         errorLine.classList.add('show');
         return;
       }
@@ -196,12 +197,12 @@
       formData.append('password', password);
     } else {
       if(!identifier || !password){
-        errorLine.textContent = 'Unesi korisničko ime/email i lozinku.';
+        errorLine.textContent = 'Enter username/email and password.';
         errorLine.classList.add('show');
         return;
       }
       url = '/login';
-      formData.append('username', identifier);
+      formData.append('username', identifier); // backend accepts both username and email in this field
       formData.append('password', password);
     }
 
@@ -220,7 +221,7 @@
       })
       .catch(() => {
         submitBtn.disabled = false;
-        errorLine.textContent = 'Greška pri povezivanju sa serverom.';
+        errorLine.textContent = 'Error connecting to server.';
         errorLine.classList.add('show');
       });
   }
