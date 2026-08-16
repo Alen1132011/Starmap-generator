@@ -114,7 +114,7 @@ This only happens once.
 ## Fonts
 
 To add your own fonts, place `.ttf` or `.otf` files inside the `fonts` folder.
-To add your own fonts, place .ttf or .otf` files inside the fonts folder.
+To add your own fonts, place `.ttf` or `.otf` files inside the `fonts` folder.
 
 They will appear in the font selector after restarting the application.
 

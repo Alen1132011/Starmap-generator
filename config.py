@@ -1,4 +1,3 @@
-utf-8utf-8
 import os
 
 

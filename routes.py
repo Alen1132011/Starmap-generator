@@ -1,4 +1,4 @@
-utf-8utf-8import os
+import os
 import time
 
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
