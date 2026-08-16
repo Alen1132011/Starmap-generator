@@ -1,4 +1,4 @@
-utf-8utf-8VEZE_SAZVIJEZDA = [
+VEZE_SAZVIJEZDA = [
     (53910, 58001),
     (58001, 59774),
     (59774, 62956),

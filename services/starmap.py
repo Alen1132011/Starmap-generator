@@ -1,4 +1,4 @@
-utf-8utf-8import os
+import os
 import math
 from skyfield.api import load
 

@@ -1,4 +1,4 @@
-utf-8utf-8import math
+import math
 
 from skyfield.api import load
 from skyfield.data import hipparcos

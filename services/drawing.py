@@ -1,4 +1,4 @@
-utf-8utf-8import math
+import math
 
 
 def hex_to_rgb(hex_str):

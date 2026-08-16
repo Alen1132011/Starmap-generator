@@ -1,4 +1,4 @@
-utf-8utf-8from flask_login import UserMixin
+from flask_login import UserMixin
 
 from extensions import db
 
