@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Text:wght@600;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 
   <style>
-        :root{
+    :root{
       --ink:#0d2237;
       --sheet:#12325a;
       --sheet-2:#0b2440;
@@ -146,7 +146,6 @@
   </div>
 
 <script>
-  // ?mode=register opens the page directly in "create account" view
   let mode = new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login';
 
   function setMode(next){
@@ -186,7 +185,7 @@
     if(mode === 'register'){
       const firstName = document.getElementById('first_name').value.trim();
       if(!firstName || !identifier || !password){
-        errorLine.textContent = 'First name, email, and password are required.';
+        errorLine.textContent = 'Ime, email i lozinka su obavezni.';
         errorLine.classList.add('show');
         return;
       }
@@ -197,12 +196,12 @@
       formData.append('password', password);
     } else {
       if(!identifier || !password){
-        errorLine.textContent = 'Enter username/email and password.';
+        errorLine.textContent = 'Unesi korisničko ime/email i lozinku.';
         errorLine.classList.add('show');
         return;
       }
       url = '/login';
-      formData.append('username', identifier); // backend accepts both username and email in this field
+      formData.append('username', identifier);
       formData.append('password', password);
     }
 
@@ -221,7 +220,7 @@
       })
       .catch(() => {
         submitBtn.disabled = false;
-        errorLine.textContent = 'Error connecting to server.';
+        errorLine.textContent = 'Greška pri povezivanju sa serverom.';
         errorLine.classList.add('show');
       });
   }
