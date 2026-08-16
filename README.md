@@ -1,3 +1,10 @@
+> **Important:** Please read this before using the application.
+>
+> If some text is not visible, try changing the font.
+>
+> If you cannot see the coordinates, make sure to fill in the entire **Celestial Coordinates** block.
+
+
 # Starmap Generator
 
 Starmap Generator is a Flask web application that creates printable star map posters based on a specific date, time, and location.
