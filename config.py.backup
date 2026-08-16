@@ -30,8 +30,8 @@ class Config:
 
     UPLOAD_FOLDER = "static/uploads"
 
-    GOOGLE_CLIENT_ID = os.environ.get("505156428447-sjvksrrbv9agcrc3lpudfoittkrsjg0h.apps.googleusercontent.com", "")
-    GOOGLE_CLIENT_SECRET = os.environ.get("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 ", "")
+    GOOGLE_CLIENT_ID = os.environ.get("", "")
+    GOOGLE_CLIENT_SECRET = os.environ.get(" ", "")
 
 
 class DevelopmentConfig(Config):
