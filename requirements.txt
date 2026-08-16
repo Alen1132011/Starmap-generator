@@ -6,3 +6,4 @@ skyfield==1.48
 numpy
 Authlib
 requests
+pandas
