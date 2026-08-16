@@ -124,13 +124,9 @@ If you deploy the application yourself, you should:
 * disable Flask debug mode
 * use a secure `SECRET_KEY`
 * use PostgreSQL (or another production database) instead of SQLite
-* set
 
-```text
-VERZIJA_APLIKACIJE=PREMIUM_PRODUKCIJA
-```
 
-to enable the full feature set.
+
 
 ## Project Structure
 
