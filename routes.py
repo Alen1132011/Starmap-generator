@@ -1,7 +1,7 @@
 import os
 import time
 
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, current_app, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 
 from services.starmap import napravi_starmap_pro
@@ -16,20 +16,13 @@ main_bp = Blueprint("main", __name__)
 def index():
 
     fontovi = []
+    fontsDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
-    if os.path.exists("fonts"):
-
-        for root, dirs, files in os.walk("fonts"):
-
+    if os.path.isdir(fontsDir):
+        for root, dirs, files in os.walk(fontsDir):
             for file in files:
-
-                if file.endswith((".ttf", ".otf")):
-
-                    path = os.path.relpath(
-                        os.path.join(root, file),
-                        "fonts"
-                    ).replace("\\", "/")
-
+                if file.lower().endswith((".ttf", ".otf")):
+                    path = os.path.relpath(os.path.join(root, file), fontsDir).replace("\\", "/")
                     fontovi.append(path)
 
     fontovi.sort()
@@ -52,13 +45,15 @@ def account():
 @main_bp.route("/update", methods=["POST"])
 def update():
 
-    path = napravi_starmap_pro(
-        request.form.to_dict()
-    )
-
-    return jsonify({
-        "image_url": f"/{path}?v={time.time()}"
-    })
+    try:
+        path = napravi_starmap_pro(request.form.to_dict())
+        return jsonify({"image_url": f"/{path}?v={time.time()}"})
+    except (ValueError, TypeError) as error:
+        current_app.logger.warning("Poster generation rejected invalid input: %s", error)
+        return jsonify({"error": "Some poster settings are invalid. Check the date, time, and coordinates."}), 400
+    except Exception:
+        current_app.logger.exception("Poster generation failed")
+        return jsonify({"error": "The poster could not be generated. Please try again."}), 500
 
 
 @main_bp.route("/save_poster", methods=["POST"])
@@ -67,16 +62,16 @@ def save_poster():
 
     data = request.form.to_dict()
 
-                                               
+
     user_folder = f"static/user_{current_user.id}"
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
 
-                                         
+
     thumbnail_filename = f"poster_{int(time.time())}.png"
     thumbnail_path = os.path.join(user_folder, thumbnail_filename).replace('\\', '/')
 
-                                                              
+
     preview_data = data.copy()
     preview_data['naslov_projekta'] = data.get('naslov_projekta', 'My Poster')
     napravi_starmap_pro(preview_data, width=400, height=566, output_path=thumbnail_path)
@@ -235,4 +230,4 @@ def delete_poster(id):
 
     return jsonify({
         "message": "Poster deleted."
-    })  
+    })

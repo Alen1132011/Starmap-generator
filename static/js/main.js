@@ -56,7 +56,11 @@ const translations = {
     'gate-skip': 'Nastavi kao Gost',
     'auth-guest-note': 'Nisi prijavljen — radiš kao gost.',
     'btn-login-link': 'PRIJAVA',
-    'btn-register-link': 'REGISTRACIJA'
+    'btn-register-link': 'REGISTRACIJA',
+    'btn-now': 'Sadašnji datum i vrijeme',
+    'btn-copy-coordinates': 'Kopiraj koordinate',
+    'copy-success': 'Koordinate kopirane.',
+    'copy-error': 'Kopiranje nije uspjelo.'
   },
   en: {
     'status-ready': 'READY',
@@ -108,7 +112,11 @@ const translations = {
     'gate-skip': 'Continue as Guest',
     'auth-guest-note': 'Not logged in — working as a guest.',
     'btn-login-link': 'LOG IN',
-    'btn-register-link': 'REGISTER'
+    'btn-register-link': 'REGISTER',
+    'btn-now': 'Use current date & time',
+    'btn-copy-coordinates': 'Copy coordinates',
+    'copy-success': 'Coordinates copied.',
+    'copy-error': 'Could not copy coordinates.'
   }
 };
 
@@ -169,14 +177,26 @@ function updatePreview(){
   img.classList.add('loading');
   debounceTimer = setTimeout(() => {
     const formData = new FormData(form);
-    fetch('/update', { method: 'POST', body: formData })
-      .then(r => r.json())
+    fetch('/update', {method:'POST', body:formData})
+      .then(async response => {
+        const data = await response.json();
+        if(!response.ok || !data.image_url) throw new Error(data.error || 'Preview generation failed');
+        return data;
+      })
       .then(data => {
+        img.onload = () => {
+          img.classList.remove('loading');
+          statusPill.classList.remove('busy');
+          statusText.textContent = translations[currentLang]['status-ready'];
+        };
+        img.onerror = () => {
+          img.classList.remove('loading');
+          statusPill.classList.remove('busy');
+          statusText.textContent = translations[currentLang]['status-error'];
+        };
         img.src = data.image_url;
-        document.getElementById('download-link').href = data.image_url;
-        img.classList.remove('loading');
-        statusPill.classList.remove('busy');
-        statusText.textContent = translations[currentLang]['status-ready'];
+        const downloadLink = document.getElementById('download-link');
+        if(downloadLink) downloadLink.href = data.image_url;
       })
       .catch(() => {
         img.classList.remove('loading');
@@ -197,18 +217,103 @@ function resetForm(){
 
 function randomizeLayout(){
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  form.querySelector('[name=y_main]').value = rand(1800, 3200);
-  form.querySelector('[name=y_sub]').value = rand(1900, 3300);
-  form.querySelector('[name=y_info]').value = rand(2000, 3200);
-  form.querySelector('[name=ls_main]').value = rand(0, 40);
-  form.querySelector('[name=ls_sub]').value = rand(0, 25);
-  form.querySelector('[name=ls_info]').value = rand(0, 15);
+  const palettes = [
+    ['#07111f', '#f4d58d', '#d8e9ff', '#f4d58d'],
+    ['#101820', '#f2aa4c', '#f2aa4c', '#f8f1e5'],
+    ['#17152b', '#d8b4fe', '#b9c6ff', '#f5edff'],
+    ['#0b2b26', '#c4f1be', '#a8e6cf', '#f3ffe9'],
+    ['#211522', '#f4a6a6', '#ffd6a5', '#fff1e6'],
+    ['#0a192f', '#64ffda', '#ccd6f6', '#ccd6f6']
+  ];
+  const palette = palettes[rand(0, palettes.length - 1)];
+  const fields = {
+    y_main: rand(1800, 3200),
+    y_sub: rand(1900, 3300),
+    y_info: rand(2000, 3200),
+    ls_main: rand(0, 24),
+    ls_sub: rand(0, 16),
+    ls_info: rand(0, 10)
+  };
 
-  liveVal('y_main'); liveVal('y_sub'); liveVal('y_info');
-  liveVal('ls_main'); liveVal('ls_sub'); liveVal('ls_info');
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = form.querySelector(`[name="${name}"]`);
+    if(input) input.value = value;
+    liveVal(name);
+  });
 
-  const randomHex = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-  applyPreset(randomHex(), randomHex(), randomHex(), randomHex());
+  const shape = form.querySelector('[name="oblik"]');
+  if(shape && shape.options.length > 1){
+    shape.selectedIndex = rand(0, shape.options.length - 1);
+  }
+
+  ['okvir', 'grid', 'lines', 'prikazi_mjesec'].forEach(name => {
+    const input = form.querySelector(`[name="${name}"]`);
+    if(input) input.checked = Math.random() > 0.5;
+  });
+
+  document.getElementById('picker-bg').value = palette[0];
+  document.getElementById('picker-frame').value = palette[1];
+  document.getElementById('picker-stars').value = palette[2];
+  document.getElementById('picker-text').value = palette[3];
+  updatePreview();
+}
+
+function addSectionAction(inputName, labelKey, action){
+  const input = form.querySelector(`[name="${inputName}"]`);
+  if(!input) return;
+  const section = input.closest('.plate-body');
+  if(!section || section.querySelector(`[data-action="${inputName}"]`)) return;
+
+  let actions = section.querySelector('.utility-actions');
+  if(!actions){
+    actions = document.createElement('div');
+    actions.className = 'utility-actions';
+    section.appendChild(actions);
+  }
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'utility-action';
+  button.dataset.key = labelKey;
+  button.dataset.action = inputName;
+  button.textContent = translations[currentLang][labelKey];
+  button.addEventListener('click', action);
+  actions.appendChild(button);
+}
+
+function setCurrentDateTime(){
+  const now = new Date();
+  const dateInput = form.querySelector('[name="datum_raw"]');
+  const timeInput = form.querySelector('[name="vrijeme_raw"]');
+  if(dateInput) dateInput.value = `${now.getFullYear()} ${String(now.getMonth() + 1).padStart(2, '0')} ${String(now.getDate()).padStart(2, '0')}`;
+  if(timeInput) timeInput.value = `${String(now.getHours()).padStart(2, '0')} ${String(now.getMinutes()).padStart(2, '0')}`;
+  updatePreview();
+}
+
+async function copyCoordinates(){
+  const lat = form.querySelector('[name="lat"]');
+  const lon = form.querySelector('[name="lon"]');
+  if(!lat || !lon) return;
+  const coordinates = `${Number(lat.value).toFixed(4)}, ${Number(lon.value).toFixed(4)}`;
+  try{
+    await navigator.clipboard.writeText(coordinates);
+    alert(translations[currentLang]['copy-success']);
+  } catch(error){
+    const helper = document.createElement('textarea');
+    helper.value = coordinates;
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand('copy');
+    helper.remove();
+    alert(translations[currentLang][copied ? 'copy-success' : 'copy-error']);
+  }
+}
+
+function addQuickActions(){
+  addSectionAction('datum_raw', 'btn-now', setCurrentDateTime);
+  addSectionAction('lat', 'btn-copy-coordinates', copyCoordinates);
 }
 
 document.getElementById('frame-wrap').addEventListener('click', function(){
@@ -349,10 +454,12 @@ function loadDesign(id){
           else { input.value = val; }
         }
       }
-      const newLat = parseFloat(data.lat);
-      const newLon = parseFloat(data.lon);
-      leafletMap.setView([newLat, newLon], 8);
-      marker.setLatLng([newLat, newLon]);
+      const newLat = Number.parseFloat(data.lat) || 0;
+      const newLon = Number.parseFloat(data.lon) || 0;
+      if(leafletMap && marker){
+        leafletMap.setView([newLat, newLon], 8);
+        marker.setLatLng([newLat, newLon]);
+      }
 
       liveVal('y_main'); liveVal('y_sub'); liveVal('y_info');
       liveVal('ls_main'); liveVal('ls_sub'); liveVal('ls_info');
@@ -372,8 +479,13 @@ function deleteDesign(id, event){
 window.onload = function(){
   form.reset();
   document.getElementById('font-search-input').value = "";
-  initMap();
+  try{
+    initMap();
+  } catch(error){
+    statusText.textContent = translations[currentLang]['status-error'];
+  }
   setLang('en');
+  addQuickActions();
   loadPostersFromDatabase();
   updatePreview();
 };

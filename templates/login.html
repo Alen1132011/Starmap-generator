@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log In — Star Chart Draft</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Text:wght@600;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-
   <style>
     :root{
       --ink:#0d2237;
@@ -20,156 +19,109 @@
       --grease-dim:#8a4526;
       --error:#e2652c;
     }
-    *{ box-sizing:border-box; }
+    *{box-sizing:border-box}
     body{
-      margin:0; min-height:100vh;
-      background:
-        linear-gradient(var(--gridline-soft) 1px, transparent 1px),
-        linear-gradient(90deg, var(--gridline-soft) 1px, transparent 1px),
-        var(--ink);
+      margin:0;
+      min-height:100vh;
+      background:linear-gradient(var(--gridline-soft) 1px,transparent 1px),linear-gradient(90deg,var(--gridline-soft) 1px,transparent 1px),var(--ink);
       background-size:42px 42px;
-      color:var(--cyan); font-family:'IBM Plex Mono', monospace;
-      display:flex; align-items:center; justify-content:center;
+      color:var(--cyan);
+      font-family:'IBM Plex Mono',monospace;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       position:relative;
+      padding:24px 0;
     }
-
-    .reg-mark{
-      position:absolute; width:22px; height:22px; opacity:.5;
-      border:1px solid var(--cyan-dim); border-radius:50%;
-    }
-    .reg-mark::before, .reg-mark::after{ content:''; position:absolute; background:var(--cyan-dim); }
-    .reg-mark::before{ width:100%; height:1px; top:50%; }
-    .reg-mark::after{ width:1px; height:100%; left:50%; }
-    .reg-tl{ top:24px; left:24px; }
-    .reg-tr{ top:24px; right:24px; }
-    .reg-bl{ bottom:24px; left:24px; }
-    .reg-br{ bottom:24px; right:24px; }
-
-    .card{
-      width:420px; max-width:90vw; background:var(--sheet);
-      border:1px solid var(--gridline); padding:36px 40px;
-    }
-    .card h1{
-      font-family:'Big Shoulders Stencil Text', sans-serif; font-weight:800;
-      text-transform:uppercase; letter-spacing:.02em; font-size:28px;
-      margin:0 0 22px; color:var(--cyan);
-    }
-    label{
-      display:block; font-size:10px; text-transform:uppercase; letter-spacing:.08em;
-      color:var(--cyan-dim); margin:14px 0 5px;
-    }
-    label:first-of-type{ margin-top:0; }
-    input[type=text], input[type=password], input[type=email]{
-      width:100%; padding:10px 11px; background:var(--ink);
-      border:1px solid var(--gridline); color:var(--cyan);
-      font-family:'IBM Plex Mono', monospace; font-size:13px;
-    }
-    input:focus{ outline:none; border-color:var(--grease); }
-
-    .error-line{
-      display:none; margin-top:14px; padding:9px 11px;
-      border:1px solid var(--error); color:var(--error); font-size:11px;
-    }
-    .error-line.show{ display:block; }
-
-    .submit-btn{
-      width:100%; margin-top:20px; padding:13px; border:none; cursor:pointer;
-      background:var(--grease); color:var(--ink);
-      font-family:'Big Shoulders Stencil Text', sans-serif; font-weight:800;
-      font-size:16px; letter-spacing:.03em; text-transform:uppercase;
-    }
-    .submit-btn:hover{ background:#f07a44; }
-    .submit-btn:disabled{ opacity:.5; cursor:wait; }
-
-    .switch-line{ margin-top:14px; font-size:11px; color:var(--cyan-dim); text-align:left; }
-    .switch-line a{ color:var(--grease); text-decoration:none; cursor:pointer; }
-    .switch-line a:hover{ text-decoration:underline; }
-
-    .divider{ display:flex; align-items:center; gap:12px; margin:22px 0; }
-    .divider .line{ flex:1; height:1px; background:var(--gridline); }
-    .divider span{ font-size:10px; color:var(--cyan-dim); text-transform:uppercase; }
-
-    .google-btn, .guest-btn{
-      width:100%; padding:11px; border:1px solid var(--gridline); background:var(--sheet-2);
-      color:var(--cyan); font-family:'IBM Plex Mono',monospace; font-size:12px;
-      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
-      text-decoration:none;
-    }
-    .google-btn:hover{ border-color:var(--grease-dim); }
-    .guest-btn:hover{ border-color:var(--grease-dim); }
-    .stack{ display:flex; gap:10px; margin-top:10px; }
-    .stack > *{ flex:1; margin-top:0; }
+    .reg-mark{position:absolute;width:22px;height:22px;opacity:.5;border:1px solid var(--cyan-dim);border-radius:50%}
+    .reg-mark::before,.reg-mark::after{content:'';position:absolute;background:var(--cyan-dim)}
+    .reg-mark::before{width:100%;height:1px;top:50%}
+    .reg-mark::after{width:1px;height:100%;left:50%}
+    .reg-tl{top:24px;left:24px}
+    .reg-tr{top:24px;right:24px}
+    .reg-bl{bottom:24px;left:24px}
+    .reg-br{bottom:24px;right:24px}
+    .card{width:420px;max-width:90vw;background:var(--sheet);border:1px solid var(--gridline);padding:36px 40px}
+    .card h1{font-family:'Big Shoulders Stencil Text',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:28px;margin:0 0 22px;color:var(--cyan)}
+    label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan-dim);margin:14px 0 5px}
+    input[type=text],input[type=password]{width:100%;padding:10px 11px;background:var(--ink);border:1px solid var(--gridline);color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:13px}
+    input:focus{outline:none;border-color:var(--grease)}
+    .error-line{display:none;margin-top:14px;padding:9px 11px;border:1px solid var(--error);color:var(--error);font-size:11px;line-height:1.5}
+    .error-line.show{display:block}
+    .submit-btn{width:100%;margin-top:20px;padding:13px;border:none;cursor:pointer;background:var(--grease);color:var(--ink);font-family:'Big Shoulders Stencil Text',sans-serif;font-weight:800;font-size:16px;letter-spacing:.03em;text-transform:uppercase}
+    .submit-btn:hover{background:#f07a44}
+    .submit-btn:disabled{opacity:.5;cursor:wait}
+    .switch-line{margin-top:14px;font-size:11px;color:var(--cyan-dim);text-align:left}
+    .switch-line a{color:var(--grease);text-decoration:none;cursor:pointer}
+    .switch-line a:hover{text-decoration:underline}
+    .divider{display:flex;align-items:center;gap:12px;margin:22px 0}
+    .divider .line{flex:1;height:1px;background:var(--gridline)}
+    .divider span{font-size:10px;color:var(--cyan-dim);text-transform:uppercase}
+    .google-btn,.guest-btn{width:100%;padding:11px;border:1px solid var(--gridline);background:var(--sheet-2);color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+    .google-btn:hover,.guest-btn:hover{border-color:var(--grease-dim)}
+    .google-mark{font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#4285f4;background:#fff;border-radius:50%;width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center}
+    .stack{display:flex;gap:10px;margin-top:10px}
+    .stack>*{flex:1;margin-top:0}
+    @media(max-width:480px){.card{padding:28px 22px}.reg-mark{display:none}}
   </style>
 </head>
 <body>
-
   <div class="reg-mark reg-tl"></div>
   <div class="reg-mark reg-tr"></div>
   <div class="reg-mark reg-bl"></div>
   <div class="reg-mark reg-br"></div>
-
   <div class="card">
-    <h1 id="form-title">Create Account</h1>
-
+    <h1 id="form-title">Log In</h1>
     <form id="auth-form" onsubmit="event.preventDefault(); submitAuth();">
-      <div id="register-fields">
-        <label>First Name</label>
+      <div id="register-fields" style="display:none">
+        <label for="first_name">First Name</label>
         <input type="text" id="first_name" autocomplete="given-name">
-
-        <label>Last Name</label>
+        <label for="last_name">Last Name</label>
         <input type="text" id="last_name" autocomplete="family-name">
       </div>
-
-      <label id="identifier-label">Email</label>
+      <label id="identifier-label" for="identifier">Username or Email</label>
       <input type="text" id="identifier" autocomplete="username" required>
-
-      <label>Password</label>
+      <label for="password">Password</label>
       <input type="password" id="password" autocomplete="current-password" required>
-
-      <div class="error-line" id="error-line"></div>
-
-      <button type="submit" class="submit-btn" id="submit-btn">Create Account</button>
+      <div class="error-line" id="error-line" role="alert" aria-live="polite"></div>
+      <button type="submit" class="submit-btn" id="submit-btn">Log In</button>
     </form>
-
-    <div class="switch-line" id="switch-line">
-      Already have an account? <a onclick="setMode('login')">Log in</a>
-    </div>
-
+    <div class="switch-line" id="switch-line">Don't have an account? <a onclick="setMode('register')">Create one</a></div>
     <div class="divider"><div class="line"></div><span>or</span><div class="line"></div></div>
-
     <div class="stack">
-      <a href="/login/google" class="google-btn">
-        Sign up with Google
-      </a>
-      <a href="/" class="guest-btn">I will do it later</a>
+      <a href="/login/google" class="google-btn"><span class="google-mark">G</span>Continue with Google</a>
+    </div>
+    <div class="stack">
+      <a href="/" class="guest-btn">Continue as Guest</a>
     </div>
   </div>
-
 <script>
-  // ?mode=register opens the page directly in "create account" view
   let mode = new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login';
 
-  function setMode(next){
-    mode = next;
+  function setMode(nextMode){
+    mode = nextMode;
     const title = document.getElementById('form-title');
     const submitBtn = document.getElementById('submit-btn');
     const switchLine = document.getElementById('switch-line');
     const registerFields = document.getElementById('register-fields');
     const identifierLabel = document.getElementById('identifier-label');
-    document.getElementById('error-line').classList.remove('show');
-
+    const identifier = document.getElementById('identifier');
+    const errorLine = document.getElementById('error-line');
+    errorLine.classList.remove('show');
     if(mode === 'register'){
       title.textContent = 'Create Account';
       submitBtn.textContent = 'Create Account';
       identifierLabel.textContent = 'Email';
+      identifier.autocomplete = 'email';
       registerFields.style.display = '';
       switchLine.innerHTML = 'Already have an account? <a onclick="setMode(\'login\')">Log in</a>';
     } else {
       title.textContent = 'Log In';
       submitBtn.textContent = 'Log In';
       identifierLabel.textContent = 'Username or Email';
+      identifier.autocomplete = 'username';
       registerFields.style.display = 'none';
-      switchLine.innerHTML = "Don't have an account? <a onclick=\"setMode('register')\">Create one</a>";
+      switchLine.innerHTML = 'Don\'t have an account? <a onclick="setMode(\'register\')">Create one</a>';
     }
   }
 
@@ -179,7 +131,6 @@
     const errorLine = document.getElementById('error-line');
     const submitBtn = document.getElementById('submit-btn');
     errorLine.classList.remove('show');
-
     const formData = new FormData();
     let url;
 
@@ -202,14 +153,17 @@
         return;
       }
       url = '/login';
-      formData.append('username', identifier); // backend accepts both username and email in this field
+      formData.append('username', identifier);
       formData.append('password', password);
     }
 
     submitBtn.disabled = true;
-
-    fetch(url, { method: 'POST', body: formData })
-      .then(res => res.json())
+    fetch(url, {method:'POST', body:formData})
+      .then(async response => {
+        const data = await response.json();
+        if(!response.ok && !data.error) data.error = 'Request failed. Please try again.';
+        return data;
+      })
       .then(data => {
         submitBtn.disabled = false;
         if(data.error){
@@ -227,6 +181,18 @@
   }
 
   setMode(mode);
+  const authError = new URLSearchParams(window.location.search).get('auth_error');
+  const authErrors = {
+    google_unavailable: 'Google sign-in is not configured yet. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.',
+    google_email_unverified: 'Google could not verify this email address. Try another account.',
+    google_account_conflict: 'This Google account is linked to a different account.',
+    google_failed: 'Google sign-in could not be completed. Please try again.'
+  };
+  if(authError && authErrors[authError]){
+    const errorLine = document.getElementById('error-line');
+    errorLine.textContent = authErrors[authError];
+    errorLine.classList.add('show');
+  }
 </script>
 </body>
 </html>

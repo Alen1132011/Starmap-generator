@@ -3,10 +3,7 @@ import os
 
 class Config:
 
-    SECRET_KEY = os.environ.get(
-        "SECRET_KEY",
-        "change-this-secret-key"
-    )
+    SECRET_KEY = os.environ.get("SECRET_KEY") or os.urandom(32)
 
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",

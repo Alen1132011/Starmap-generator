@@ -342,3 +342,7 @@ input[type=range]::-moz-range-thumb{
   background:#e2652c;
   color:#0d2237;
 }
+.utility-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.utility-action{border:1px solid var(--gridline);background:transparent;color:var(--cyan-dim);padding:7px 9px;font:inherit;font-size:10px;cursor:pointer;transition:border-color .15s ease,color .15s ease}
+.utility-action:hover{border-color:var(--grease);color:var(--grease)}
+.utility-action:focus-visible{outline:1px solid var(--grease);outline-offset:2px}

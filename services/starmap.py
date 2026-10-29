@@ -16,12 +16,47 @@ from services.drawing import (
 from services.constellations import VEZE_SAZVIJEZDA
 
 
-FONTS_DIR = "fonts"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FONTS_DIR = os.path.join(BASE_DIR, "fonts")
+
+
+def loadFont(fontName, size):
+    fontsRoot = os.path.realpath(FONTS_DIR)
+    requestedPath = os.path.realpath(os.path.join(FONTS_DIR, str(fontName or "")))
+
+    try:
+        if os.path.commonpath([fontsRoot, requestedPath]) == fontsRoot and os.path.isfile(requestedPath):
+            return ImageFont.truetype(requestedPath, size)
+    except (OSError, ValueError):
+        pass
+
+    fallbackPaths = [
+        os.path.join(FONTS_DIR, "DejaVuSans.ttf"),
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/Arial.ttf"
+    ]
+
+    for fallbackPath in fallbackPaths:
+        if os.path.isfile(fallbackPath):
+            try:
+                return ImageFont.truetype(fallbackPath, size)
+            except OSError:
+                pass
+
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
 
 
 def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
 
-                                            
+
     if width is None:
         width = 2400
     if height is None:
@@ -108,7 +143,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
             raw_tekst = "#ffffff"
 
 
-
     bg_boja = hex_to_rgb(raw_bg)
     okvir_boja = hex_to_rgb(raw_okvir)
     zvijezde_boja = hex_to_rgb(raw_zvijezda)
@@ -119,8 +153,8 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
     VISINA = height
 
     cx = width // 2
-    cy = height // 3                                                     
-    R = min(width, height) * 0.35                                     
+    cy = height // 3
+    R = min(width, height) * 0.35
 
 
     img = Image.new(
@@ -249,7 +283,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
     ) % 24
 
 
-
     if prikazi_grid:
 
         grid_col = (
@@ -304,7 +337,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
                 )
 
 
-
         for lon_deg in range(-75, 76, 15):
 
             tacke = []
@@ -350,7 +382,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
                     fill=grid_col,
                     width=3
                 )
-
 
 
     pos_map = {}
@@ -483,7 +514,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
             )
 
 
-
     if prikazi_lines:
 
         for start, end in VEZE_SAZVIJEZDA:
@@ -506,7 +536,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
                 )
 
 
-
     img.paste(
         nebo_img,
         (0,0),
@@ -518,7 +547,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
         img,
         "RGBA"
     )
-
 
 
     if oblik == "srce":
@@ -547,7 +575,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
         )
 
 
-
     if prikazi_okvir:
 
         draw_main.rectangle(
@@ -574,36 +601,12 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
         )
 
 
-
-    font_name = podaci.get(
-        "font_choice",
-        "Standard.ttf"
-    )
-
-
-    font_path = os.path.join(
-        FONTS_DIR,
-        font_name
-    )
-
+    fontName = podaci.get("font_choice", "arial.ttf")
 
     try:
-
-        f_main = ImageFont.truetype(
-            font_path,
-            140
-        )
-
-        f_sub = ImageFont.truetype(
-            font_path,
-            70
-        )
-
-        f_info = ImageFont.truetype(
-            font_path,
-            52
-        )
-
+        f_main = loadFont(fontName, 140)
+        f_sub = loadFont(fontName, 70)
+        f_info = loadFont(fontName, 52)
 
 
         y_main = int(
@@ -626,7 +629,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
                 2950
             )
         )
-
 
 
         t_main = transformisi_tekst(
@@ -653,8 +655,9 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
         )
 
 
-        t_koor = f"{lat}° N, {lon}° E"
-
+        latDirection = "N" if lat >= 0 else "S"
+        lonDirection = "E" if lon >= 0 else "W"
+        t_koor = f"{abs(lat):.2f}° {latDirection}, {abs(lon):.2f}° {lonDirection}"
 
 
         draw_text_spaced(
@@ -725,7 +728,6 @@ def napravi_starmap_pro(podaci, width=None, height=None, output_path=None):
 
     except Exception:
         pass
-
 
 
     if output_path is None:
