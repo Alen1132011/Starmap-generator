@@ -346,3 +346,8 @@ input[type=range]::-moz-range-thumb{
 .utility-action{border:1px solid var(--gridline);background:transparent;color:var(--cyan-dim);padding:7px 9px;font:inherit;font-size:10px;cursor:pointer;transition:border-color .15s ease,color .15s ease}
 .utility-action:hover{border-color:var(--grease);color:var(--grease)}
 .utility-action:focus-visible{outline:1px solid var(--grease);outline-offset:2px}
+
+
+.mini-game-link{position:absolute;right:24px;bottom:10px;color:var(--grease);font-size:9px;letter-spacing:.08em;text-decoration:none;border-bottom:1px solid var(--grease-dim);padding-bottom:3px;}
+.mini-game-link:hover{color:#ff9a6b;}
+@media(max-width:620px){.mini-game-link{right:18px;bottom:7px;}}

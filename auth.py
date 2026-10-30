@@ -99,7 +99,7 @@ def logout():
 @auth_bp.route("/login/google")
 def loginGoogle():
     if not current_app.config.get("GOOGLE_CLIENT_ID") or not current_app.config.get("GOOGLE_CLIENT_SECRET"):
-        return googleError("google_unavailable")
+        return googleError("google_unavailable")                      
 
     try:
         redirectUri = "https://starmap.alen.hackclub.app/login/google/callback"

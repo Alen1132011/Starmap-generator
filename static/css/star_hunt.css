@@ -1,0 +1,36 @@
+*{box-sizing:border-box}
+:root{--ink:#0d2237;--panel:#12325a;--panel-deep:#0b2440;--line:#26496e;--text:#d7e8f2;--muted:#7d9bb3;--orange:#e2652c;--mint:#83d6c1}
+body.hunt-page{margin:0;min-height:100vh;background:var(--ink);color:var(--text);font-family:'IBM Plex Mono',monospace;background-image:linear-gradient(#1a3a5c55 1px,transparent 1px),linear-gradient(90deg,#1a3a5c55 1px,transparent 1px);background-size:42px 42px}
+.hunt-shell{width:min(920px,calc(100% - 36px));margin:0 auto;padding:28px 0 22px}
+.hunt-header{position:relative;padding:18px 0 24px;border-bottom:1px solid var(--line)}
+.back-link{color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.1em}
+.back-link:hover{color:var(--orange)}
+.eyebrow{margin-top:28px;color:var(--orange);font-size:10px;letter-spacing:.18em}
+.hunt-header h1{font-family:'Big Shoulders Stencil Text',sans-serif;font-size:clamp(52px,10vw,88px);line-height:.9;margin:12px 0;color:var(--text);letter-spacing:.02em}
+.hunt-header h1 span{color:var(--orange)}
+.intro{max-width:550px;color:var(--muted);font-size:12px;line-height:1.8;margin:14px 0 0}
+.game-panel{margin:26px auto 0;background:var(--panel);border:1px solid var(--line);box-shadow:0 22px 60px #0003}
+.game-topline{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+.game-topline>div{padding:15px 20px;display:flex;align-items:baseline;gap:12px}
+.game-topline>div+div{border-left:1px solid var(--line)}
+.stat-label{font-size:9px;letter-spacing:.16em;color:var(--muted)}
+.game-topline strong{font-size:24px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.mission-row{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;min-height:82px;background:var(--panel-deep)}
+.mission-row p{margin:7px 0 0;font-size:13px}
+.signal-preview{width:40px;height:40px;display:grid;place-items:center;font-size:28px;border:1px solid var(--line);color:var(--orange)}
+.sky-wrap{height:390px;position:relative;background:#071525;overflow:hidden}
+#sky{width:100%;height:100%;display:block;cursor:crosshair;touch-action:manipulation}
+.sky-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:#071525d9}
+.sky-message.hidden{display:none}
+.message-mark{font-size:32px;color:var(--orange)}
+.sky-message h2{font-family:'Big Shoulders Stencil Text',sans-serif;text-transform:uppercase;font-size:32px;letter-spacing:.04em;margin:10px 0}
+.sky-message p{max-width:370px;color:var(--muted);font-size:11px;line-height:1.8;margin:0 0 20px}
+.start-button{background:var(--orange);border:0;color:var(--ink);font:600 12px 'IBM Plex Mono',monospace;letter-spacing:.12em;padding:13px 24px;cursor:pointer}
+.start-button:hover{background:#f07a44}
+.game-footer{padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);font-size:9px;letter-spacing:.1em;color:var(--muted)}
+.sound-toggle{background:transparent;border:1px solid var(--line);color:var(--muted);padding:7px 9px;font:inherit;cursor:pointer}
+.sound-toggle:hover{border-color:var(--orange);color:var(--text)}
+.hunt-footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px;color:#58758e;font-size:9px;letter-spacing:.12em}
+.mini-game-link{position:absolute;right:24px;bottom:10px;color:var(--orange);font-size:9px;letter-spacing:.08em;text-decoration:none;border-bottom:1px solid var(--grease-dim,#8a4526);padding-bottom:3px}
+.mini-game-link:hover{color:#ff9a6b}
+@media(max-width:620px){.hunt-shell{width:min(100% - 22px,920px);padding-top:16px}.hunt-header{padding-top:10px}.eyebrow{margin-top:22px}.game-topline>div{padding:12px 10px;gap:7px;flex-direction:column}.game-topline strong{font-size:21px}.mission-row{padding:13px}.sky-wrap{height: min(58vh,390px);min-height:280px}.game-footer{align-items:flex-start;gap:10px}.hunt-footer{font-size:8px}.mini-game-link{right:18px;bottom:7px}}

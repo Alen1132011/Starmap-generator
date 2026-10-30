@@ -33,6 +33,11 @@ def index():
     )
 
 
+@main_bp.route("/star-hunt")
+def star_hunt():
+    return render_template("star_hunt.html")
+
+
 @main_bp.route("/account")
 def account():
 

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Text:wght@600;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">\n  <link rel="stylesheet" href="{{ url_for('static', filename='css/star_hunt.css') }}">
 </head>
 <body>
 
@@ -54,6 +54,7 @@
         <h1 data-key="header-title">Star Chart Draft</h1>
         <p data-key="header-subtitle">custom night-sky print</p>
       </div>
+      <a class="mini-game-link" href="/star-hunt">PLAY STAR HUNT ↗</a>
       <div class="lang-switcher">
         <button type="button" class="lang-btn" onclick="setLang('bs')">BS</button>
         <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
