@@ -1,9 +1,13 @@
 > **Important:** Please read this before using the application.
 >
 > If some text is not visible, try changing the font.
->
+
+
 > If you cannot see the coordinates, make sure to fill in the entire **Celestial Coordinates** block.
 
+- **New Game Preview – Star Hunt:** A small interactive mini-game where players search for matching stars, earn points, and try to beat their best score.
+- ><img width="449" height="317" alt="Screenshot 2026-10-30 183843" src="https://github.com/user-attachments/assets/f7795d0d-bd70-41ff-a990-f71129dbe5f7" />
+<img width="240" height="227" alt="Screenshot 2026-10-30 183744" src="https://github.com/user-attachments/assets/f612901f-197c-47ca-9798-47c199b91000" />
 
 # Starmap Generator
 
